@@ -8,14 +8,23 @@ export default function KeyCap({
   isPressed = false,
   isTarget = false,
   isError = false,
+  isCorrect = false,
   isModifier = false,
-  isShifted = false,
   onMouseDown,
   onMouseUp
 }) {
+  const classes = [
+    'orange-keycap',
+    isPressed ? 'is-pressed' : '',
+    isTarget ? 'is-target' : '',
+    isError ? 'is-error' : '',
+    isCorrect ? 'is-correct' : '',
+    isModifier ? 'is-modifier' : ''
+  ].filter(Boolean).join(' ');
+
   return (
     <div
-      className={`orange-keycap ${isPressed ? 'is-pressed' : ''} ${isTarget ? 'is-target' : ''} ${isError ? 'is-error' : ''} ${isModifier ? 'is-modifier' : ''}`}
+      className={classes}
       style={{ flex: `${width} ${width} 0` }}
       data-code={code}
       onMouseDown={onMouseDown}
@@ -34,4 +43,3 @@ export default function KeyCap({
     </div>
   );
 }
-

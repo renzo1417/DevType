@@ -36,29 +36,7 @@ export function playKeySound(soundType = 'thock', volume = 0.75, isError = false
   masterGain.gain.setValueAtTime(volume * 0.85, now);
   masterGain.connect(ctx.destination);
 
-  if (isError) {
-    // Soft error tone (descending buzz)
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(150, now);
-    osc.frequency.exponentialRampToValueAtTime(60, now + 0.1);
-
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(320, now);
-
-    gain.gain.setValueAtTime(0.4, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-
-    osc.connect(filter);
-    filter.connect(gain);
-    gain.connect(masterGain);
-
-    osc.start(now);
-    osc.stop(now + 0.1);
-    return;
-  }
+  // Error sound buzzer removed to maintain physical switch audio consistency
 
   // Micro pitch variance for natural acoustic feel
   const variance = 0.94 + Math.random() * 0.12;

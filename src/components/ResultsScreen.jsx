@@ -5,12 +5,7 @@ import {
   ArrowRight,
   Code2,
   Share2,
-  CheckCircle2,
-  Award,
-  Zap,
-  Target,
-  Clock,
-  AlertCircle
+  CheckCircle2
 } from 'lucide-react';
 import PerformanceChart from './PerformanceChart';
 
@@ -22,7 +17,6 @@ export default function ResultsScreen({
     correctChars: 0,
     incorrectChars: 0,
     extraChars: 0,
-    missedChars: 0,
     totalChars: 0,
     duration: 30,
     timeTaken: 30,
@@ -38,22 +32,19 @@ export default function ResultsScreen({
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    // Trigger celebratory confetti if accuracy is good or high WPM
-    if (stats.accuracy >= 90 && stats.wpm > 20) {
+    if (stats.accuracy >= 90 && stats.wpm > 25) {
       try {
         confetti({
-          particleCount: 50,
-          spread: 60,
+          particleCount: 40,
+          spread: 55,
           origin: { y: 0.7 },
-          colors: ['#22c55e', '#38bdf8', '#a855f7', '#f97316', '#ffffff']
+          colors: ['#ea580c', '#38bdf8', '#22c55e', '#ffffff']
         });
-      } catch (e) {
-        // ignore in non-browser or sandbox
-      }
+      } catch (e) {}
     }
   }, [stats]);
 
-  // Keyboard shortcut listener for Tab + Enter or Esc or Space
+  // Keyboard shortcut listener for Enter / Esc to restart
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' || (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey)) {
@@ -66,11 +57,10 @@ export default function ResultsScreen({
   }, [onRestart]);
 
   const handleCopyResult = () => {
-    const text = `⚡ DevType Speedtyper Result\n` +
-      `Language: ${stats.language.toUpperCase()}\n` +
-      `Speed: ${Math.round(stats.wpm)} WPM (Raw: ${Math.round(stats.rawWpm)} WPM)\n` +
+    const text = `⚡ DevType v2.0 Result\n` +
+      `Language: ${stats.language.toUpperCase()} (${stats.difficulty})\n` +
+      `WPM: ${Math.round(stats.wpm)} (Raw: ${Math.round(stats.rawWpm)})\n` +
       `Accuracy: ${stats.accuracy.toFixed(1)}%\n` +
-      `Characters: ${stats.correctChars}/${stats.incorrectChars}/${stats.extraChars}\n` +
       `Time: ${Math.round(stats.timeTaken)}s`;
 
     if (navigator.clipboard) {
@@ -82,123 +72,111 @@ export default function ResultsScreen({
 
   return (
     <div className="results-container animate-fade-in">
-      {/* Header Banner */}
-      <div className="results-hero">
-        <div className="results-badge">
-          <Award size={16} className="accent-text" />
-          <span>SYNTAX TEST COMPLETE</span>
+      {/* Header Info */}
+      <div className="results-header">
+        <div className="results-meta">
+          <span className="results-lang font-mono">{stats.language.toUpperCase()}</span>
+          <span className="results-divider">•</span>
+          <span className="results-title-text">{stats.snippetTitle || 'Custom Code'}</span>
+          <span className="results-divider">•</span>
+          <span className="results-difficulty-badge">{stats.difficulty}</span>
         </div>
-        <h2 className="results-title">Great Performance</h2>
-        <p className="results-subtitle">
-          {stats.snippetTitle || stats.language.toUpperCase()} • {stats.difficulty} Tier
-        </p>
       </div>
 
-      {/* Hero Metrics Row */}
-      <div className="results-grid">
-        {/* Net WPM Big Card */}
-        <div className="stat-card hero-card">
-          <div className="stat-card-label">
-            <Zap size={16} className="accent-text" />
-            <span>NET WPM</span>
-          </div>
-          <div className="stat-card-value font-mono accent-text">
+      {/* Main Stats Summary Grid */}
+      <div className="results-stats-row">
+        {/* Net WPM */}
+        <div className="result-stat-block">
+          <div className="result-stat-label">wpm</div>
+          <div className="result-stat-number accent-text font-mono">
             {Math.round(stats.wpm)}
           </div>
-          <div className="stat-card-sub text-muted font-mono">
-            Raw: {Math.round(stats.rawWpm)} WPM
+          <div className="result-stat-sub font-mono">
+            raw {Math.round(stats.rawWpm)}
           </div>
         </div>
 
-        {/* Accuracy Card */}
-        <div className="stat-card">
-          <div className="stat-card-label">
-            <Target size={16} className="accent-text" />
-            <span>ACCURACY</span>
+        {/* Accuracy */}
+        <div className="result-stat-block">
+          <div className="result-stat-label">acc</div>
+          <div className="result-stat-number font-mono">
+            {stats.accuracy.toFixed(1)}%
           </div>
-          <div className="stat-card-value font-mono">
-            {stats.accuracy.toFixed(1)}<span className="unit">%</span>
-          </div>
-          <div className="stat-card-sub text-muted font-mono">
-            {stats.correctChars} correct / {stats.incorrectChars + stats.extraChars} errors
+          <div className="result-stat-sub font-mono">
+            {stats.correctChars} / {stats.incorrectChars}
           </div>
         </div>
 
-        {/* Characters Breakdown Card */}
-        <div className="stat-card">
-          <div className="stat-card-label">
-            <Code2 size={16} className="accent-text" />
-            <span>CHARACTERS</span>
+        {/* Characters Breakdown */}
+        <div className="result-stat-block">
+          <div className="result-stat-label">characters</div>
+          <div className="result-stat-number font-mono chars-number">
+            <span className="char-ok">{stats.correctChars}</span>
+            <span className="char-slash">/</span>
+            <span className="char-err">{stats.incorrectChars}</span>
           </div>
-          <div className="stat-card-value font-mono char-breakdown">
-            <span className="char-ok" title="Correct">{stats.correctChars}</span>
-            <span className="char-divider">/</span>
-            <span className="char-err" title="Incorrect">{stats.incorrectChars}</span>
-            <span className="char-divider">/</span>
-            <span className="char-extra" title="Extra">{stats.extraChars}</span>
-          </div>
-          <div className="stat-card-sub text-muted font-mono">
-            cor / inc / extra
+          <div className="result-stat-sub font-mono">
+            correct / errors
           </div>
         </div>
 
-        {/* Duration Card */}
-        <div className="stat-card">
-          <div className="stat-card-label">
-            <Clock size={16} className="accent-text" />
-            <span>TEST DURATION</span>
+        {/* Time Taken */}
+        <div className="result-stat-block">
+          <div className="result-stat-label">time</div>
+          <div className="result-stat-number font-mono">
+            {Math.round(stats.timeTaken)}s
           </div>
-          <div className="stat-card-value font-mono">
-            {Math.round(stats.timeTaken)}<span className="unit">s</span>
-          </div>
-          <div className="stat-card-sub text-muted font-mono">
-            Mode: {stats.duration ? `${stats.duration}s timer` : 'Code completion'}
+          <div className="result-stat-sub font-mono">
+            {stats.duration ? `${stats.duration}s test` : 'completed'}
           </div>
         </div>
       </div>
 
-      {/* Interactive Performance Graph */}
-      <div className="results-chart-section">
-        <PerformanceChart timeline={stats.timeline} />
-      </div>
+      {/* Performance Graph */}
+      {stats.timeline && stats.timeline.length > 1 && (
+        <div className="results-chart-section">
+          <PerformanceChart timeline={stats.timeline} />
+        </div>
+      )}
 
-      {/* Action Buttons */}
+      {/* Minimal Action Buttons */}
       <div className="results-actions">
         <button
           type="button"
-          className="btn-action btn-primary"
+          className="result-action-btn primary"
           onClick={onRestart}
-          title="Restart (Tab + Enter or Esc)"
+          title="Restart Test (Esc)"
         >
-          <RotateCcw size={16} />
-          <span>Restart Test <kbd className="btn-kbd">Esc</kbd></span>
+          <RotateCcw size={15} />
+          <span>Restart <kbd className="btn-kbd">Esc</kbd></span>
         </button>
 
         <button
           type="button"
-          className="btn-action btn-secondary"
+          className="result-action-btn"
           onClick={onNextSnippet}
+          title="Next Snippet"
         >
-          <ArrowRight size={16} />
+          <ArrowRight size={15} />
           <span>Next Snippet</span>
         </button>
 
         <button
           type="button"
-          className="btn-action btn-outline"
+          className="result-action-btn"
           onClick={onOpenLanguagePicker}
         >
-          <Code2 size={16} />
+          <Code2 size={15} />
           <span>Change Language</span>
         </button>
 
         <button
           type="button"
-          className="btn-action btn-ghost"
+          className="result-action-btn ghost"
           onClick={handleCopyResult}
         >
-          {copied ? <CheckCircle2 size={16} className="accent-text" /> : <Share2 size={16} />}
-          <span>{copied ? 'Copied to Clipboard!' : 'Share Score'}</span>
+          {copied ? <CheckCircle2 size={15} className="accent-text" /> : <Share2 size={15} />}
+          <span>{copied ? 'Copied' : 'Share'}</span>
         </button>
       </div>
     </div>

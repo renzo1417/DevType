@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import KeyCap from './KeyCap';
 
 export const ORANGE_KEYBOARD_LAYOUT = [
-  // Row 1
+  // Row 1: Number & Symbol Row
   [
     { code: 'Backquote', primary: '`', secondary: '~', width: 1 },
     { code: 'Digit1', primary: '1', secondary: '!', width: 1 },
@@ -17,11 +17,11 @@ export const ORANGE_KEYBOARD_LAYOUT = [
     { code: 'Digit0', primary: '0', secondary: ')', width: 1 },
     { code: 'Minus', primary: '-', secondary: '_', width: 1 },
     { code: 'Equal', primary: '=', secondary: '+', width: 1 },
-    { code: 'Backspace', primary: 'Backspace', width: 1.8, isModifier: true }
+    { code: 'Backspace', primary: 'Backspace', width: 1.85, isModifier: true }
   ],
-  // Row 2
+  // Row 2: QWERTY Top Alpha
   [
-    { code: 'Tab', primary: 'Tab', width: 1.4, isModifier: true },
+    { code: 'Tab', primary: 'Tab', width: 1.45, isModifier: true },
     { code: 'KeyQ', primary: 'Q', width: 1 },
     { code: 'KeyW', primary: 'W', width: 1 },
     { code: 'KeyE', primary: 'E', width: 1 },
@@ -36,9 +36,9 @@ export const ORANGE_KEYBOARD_LAYOUT = [
     { code: 'BracketRight', primary: ']', secondary: '}', width: 1 },
     { code: 'Backslash', primary: '\\', secondary: '|', width: 1.4 }
   ],
-  // Row 3
+  // Row 3: ASDF Home Row
   [
-    { code: 'CapsLock', primary: 'Caps', width: 1.7, isModifier: true },
+    { code: 'CapsLock', primary: 'Caps', width: 1.75, isModifier: true },
     { code: 'KeyA', primary: 'A', width: 1 },
     { code: 'KeyS', primary: 'S', width: 1 },
     { code: 'KeyD', primary: 'D', width: 1 },
@@ -52,9 +52,9 @@ export const ORANGE_KEYBOARD_LAYOUT = [
     { code: 'Quote', primary: "'", secondary: '"', width: 1 },
     { code: 'Enter', primary: 'Enter', width: 2.1, isModifier: true }
   ],
-  // Row 4
+  // Row 4: ZXCV Bottom Alpha
   [
-    { code: 'ShiftLeft', primary: 'Shift', width: 2.2, isModifier: true },
+    { code: 'ShiftLeft', primary: 'Shift', width: 2.25, isModifier: true },
     { code: 'KeyZ', primary: 'Z', width: 1 },
     { code: 'KeyX', primary: 'X', width: 1 },
     { code: 'KeyC', primary: 'C', width: 1 },
@@ -67,7 +67,7 @@ export const ORANGE_KEYBOARD_LAYOUT = [
     { code: 'Slash', primary: '/', secondary: '?', width: 1 },
     { code: 'ShiftRight', primary: 'Shift', width: 2.6, isModifier: true }
   ],
-  // Row 5
+  // Row 5: Bottom Modifiers & Spacebar
   [
     { code: 'ControlLeft', primary: 'Ctrl', width: 1.25, isModifier: true },
     { code: 'MetaLeft', primary: 'Win', width: 1.15, isModifier: true },
@@ -122,6 +122,7 @@ export default function VirtualKeyboard({
   pressedKeys = new Set(),
   targetChar = '',
   lastErrorKey = null,
+  lastCorrectKey = null,
   showHints = true,
   onVirtualKeyPress
 }) {
@@ -131,7 +132,7 @@ export default function VirtualKeyboard({
   }, [targetChar, showHints]);
 
   return (
-    <div className="orange-keyboard-container" aria-label="Orange Mechanical Keyboard">
+    <div className="orange-keyboard-container" aria-label="DevType Orange Mechanical Keyboard">
       <div className="orange-keyboard-board">
         {ORANGE_KEYBOARD_LAYOUT.map((row, rowIndex) => (
           <div className="orange-keyboard-row" key={`kb-row-${rowIndex}`}>
@@ -139,8 +140,9 @@ export default function VirtualKeyboard({
               const isPressed = pressedKeys.has(key.code);
               const isTarget = targetKeyCodes.has(key.code);
               const isError = lastErrorKey === key.code;
+              const isCorrect = lastCorrectKey === key.code;
               const isModifierActive = (key.code.startsWith('Shift') && isShiftActive) ||
-                                     (key.code === 'CapsLock' && pressedKeys.has('CapsLock'));
+                                       (key.code === 'CapsLock' && pressedKeys.has('CapsLock'));
 
               return (
                 <KeyCap
@@ -152,8 +154,8 @@ export default function VirtualKeyboard({
                   isPressed={isPressed}
                   isTarget={isTarget}
                   isError={isError}
+                  isCorrect={isCorrect}
                   isModifier={key.isModifier || isModifierActive}
-                  isShifted={isShiftActive}
                   onMouseDown={() => onVirtualKeyPress && onVirtualKeyPress(key.code)}
                 />
               );
@@ -164,4 +166,3 @@ export default function VirtualKeyboard({
     </div>
   );
 }
-

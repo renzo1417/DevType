@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Code2,
   Volume2,
   VolumeX,
   Settings,
@@ -22,52 +21,45 @@ export default function Header({
     <header className="app-header">
       <div className="header-left">
         <a href="/" className="brand-logo" onClick={(e) => e.preventDefault()}>
-          <div className="brand-icon-box">
-            <span className="brand-symbol">&lt;/&gt;</span>
-          </div>
-          <div className="brand-text-group">
-            <h1 className="brand-title">DevType</h1>
-            <span className="brand-tagline">Syntax Speedtyper</span>
-          </div>
+          <div className="brand-symbol">&lt;dev/type&gt;</div>
+          <span className="brand-version-badge">v2.0</span>
         </a>
       </div>
 
       <div className="header-right">
-        {/* Light / Dark Mode Toggle Button */}
+        {/* Color Mode Toggle */}
         <button
           type="button"
-          className="header-btn"
+          className="header-icon-btn"
           onClick={onToggleColorMode}
-          title={colorMode === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          aria-label={colorMode === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          title={colorMode === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+          aria-label={colorMode === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
         >
-          {colorMode === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+          {colorMode === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
         </button>
 
-
-        {/* Sound Toggle Button */}
+        {/* Sound Toggle */}
         <button
           type="button"
-          className={`header-btn ${isMuted ? 'is-muted' : ''}`}
+          className={`header-icon-btn ${isMuted ? 'is-muted' : ''}`}
           onClick={onToggleSound}
-          title={isMuted ? 'Unmute Mechanical Audio' : `Audio: ${soundType} (Click to mute)`}
-          aria-label="Toggle mechanical switch audio"
+          title={isMuted ? 'Unmute typing sound' : `Sound: ${soundType} (Click to mute)`}
+          aria-label="Toggle mechanical switch sound"
         >
-          {isMuted ? <VolumeX size={17} /> : <Volume2 size={17} />}
+          {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
         </button>
 
-        {/* Settings Button */}
+        {/* Settings */}
         <button
           type="button"
-          className="header-btn"
+          className="header-icon-btn"
           onClick={onOpenSettings}
-          title="Open Settings & Preferences"
+          title="Settings & Preferences"
           aria-label="Open settings"
         >
-          <Settings size={17} />
+          <Settings size={16} />
         </button>
       </div>
     </header>
   );
 }
-

@@ -6,195 +6,293 @@ export const LANGUAGES = [
   { id: 'html', name: 'HTML', ext: '.html' }
 ];
 
+export const DIFFICULTIES = ['All', 'Easy', 'Intermediate', 'Advanced'];
 
 export const SNIPPETS = {
   javascript: [
+    // Easy
     {
-      id: 'js-async-fetch',
-      title: 'Async Data Fetcher & Cache',
+      id: 'js-clamp-utility',
+      title: 'Clamp Number Utility',
+      difficulty: 'Easy',
+      code: `function clamp(val, min, max) {
+  if (min > max) {
+    throw new Error('min must be <= max');
+  }
+  return Math.min(Math.max(val, min), max);
+}`
+    },
+    {
+      id: 'js-array-chunk',
+      title: 'Array Chunking Helper',
+      difficulty: 'Easy',
+      code: `function chunk(array, size = 1) {
+  const result = [];
+  for (let i = 0; i < array.length; i += size) {
+    result.push(array.slice(i, i + size));
+  }
+  return result;
+}`
+    },
+    {
+      id: 'js-debounce',
+      title: 'Debounce Function Handler',
+      difficulty: 'Easy',
+      code: `function debounce(fn, ms = 300) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), ms);
+  };
+}`
+    },
+    // Intermediate
+    {
+      id: 'js-async-fetch-cache',
+      title: 'Async Fetch with Cache & TTL',
       difficulty: 'Intermediate',
-      code: `async function fetchUserData(userId) {
-  const cacheKey = \`user:\${userId}\`;
-  const cached = await cache.get(cacheKey);
-  if (cached) return JSON.parse(cached);
+      code: `async function fetchWithCache(url, ttlMs = 60000) {
+  const cacheKey = \`cache:\${url}\`;
+  const cached = sessionStorage.getItem(cacheKey);
+  if (cached) {
+    const { data, timestamp } = JSON.parse(cached);
+    if (Date.now() - timestamp < ttlMs) return data;
+  }
 
-  const response = await fetch(\`/api/users/\${userId}\`);
+  const response = await fetch(url);
   if (!response.ok) {
-    throw new Error(\`Failed to fetch user \${userId}\`);
+    throw new Error(\`Request failed: \${response.status}\`);
   }
   const data = await response.json();
-  await cache.set(cacheKey, JSON.stringify(data), 3600);
+  sessionStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: Date.now() }));
   return data;
 }`
     },
     {
-      id: 'js-debounce-hook',
-      title: 'Debounce Function Utility',
-      difficulty: 'Beginner',
-      code: `function debounce(func, delay = 300) {
-  let timeoutId = null;
-  return function (...args) {
-    if (timeoutId) clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => {
-      func.apply(this, args);
-    }, delay);
-  };
-}`
-    },
-    {
-      id: 'js-binary-search-tree',
-      title: 'Binary Search Tree Insert',
-      difficulty: 'Advanced',
-      code: `class TreeNode {
-  constructor(value) {
-    this.value = value;
-    this.left = null;
-    this.right = null;
-  }
-}
-
-function insertNode(root, value) {
-  if (!root) return new TreeNode(value);
-  if (value < root.value) {
-    root.left = insertNode(root.left, value);
-  } else if (value > root.value) {
-    root.right = insertNode(root.right, value);
-  }
-  return root;
-}`
-    },
-    {
       id: 'js-event-emitter',
-      title: 'Custom Event Emitter Pattern',
+      title: 'Lightweight Event Emitter',
       difficulty: 'Intermediate',
       code: `class EventEmitter {
   constructor() {
     this.events = new Map();
   }
 
-  on(event, listener) {
+  on(event, handler) {
     if (!this.events.has(event)) {
       this.events.set(event, new Set());
     }
-    this.events.get(event).add(listener);
-    return () => this.off(event, listener);
+    this.events.get(event).add(handler);
+    return () => this.off(event, handler);
+  }
+
+  off(event, handler) {
+    const handlers = this.events.get(event);
+    if (handlers) handlers.delete(handler);
   }
 
   emit(event, ...args) {
-    const listeners = this.events.get(event);
-    if (listeners) {
-      listeners.forEach(fn => fn(...args));
+    const handlers = this.events.get(event);
+    if (handlers) handlers.forEach(fn => fn(...args));
+  }
+}`
+    },
+    // Advanced
+    {
+      id: 'js-reactive-state',
+      title: 'Observable State Store Proxy',
+      difficulty: 'Advanced',
+      code: `function createStore(initialState) {
+  const subscribers = new Set();
+  const state = new Proxy(initialState, {
+    set(target, prop, value) {
+      if (target[prop] === value) return true;
+      target[prop] = value;
+      subscribers.forEach(listener => listener(target));
+      return true;
     }
+  });
+
+  return {
+    state,
+    subscribe(listener) {
+      subscribers.add(listener);
+      return () => subscribers.delete(listener);
+    }
+  };
+}`
+    },
+    {
+      id: 'js-lru-cache',
+      title: 'LRU Cache with Map Iterators',
+      difficulty: 'Advanced',
+      code: `class LRUCache {
+  constructor(capacity) {
+    this.capacity = capacity;
+    this.cache = new Map();
+  }
+
+  get(key) {
+    if (!this.cache.has(key)) return -1;
+    const value = this.cache.get(key);
+    this.cache.delete(key);
+    this.cache.set(key, value);
+    return value;
+  }
+
+  put(key, value) {
+    if (this.cache.has(key)) {
+      this.cache.delete(key);
+    } else if (this.cache.size >= this.capacity) {
+      const oldestKey = this.cache.keys().next().value;
+      this.cache.delete(oldestKey);
+    }
+    this.cache.set(key, value);
   }
 }`
     }
   ],
 
   python: [
+    // Easy
     {
-      id: 'py-quicksort',
-      title: 'Recursive Quicksort with Partition',
-      difficulty: 'Intermediate',
-      code: `def quicksort(arr: list[int]) -> list[int]:
-    if len(arr) <= 1:
-        return arr
-    pivot = arr[len(arr) // 2]
-    left = [x for x in arr if x < pivot]
-    middle = [x for x in arr if x == pivot]
-    right = [x for x in arr if x > pivot]
-    return quicksort(left) + middle + quicksort(right)`
+      id: 'py-palindrome',
+      title: 'Palindrome & Anagram Checker',
+      difficulty: 'Easy',
+      code: `def is_palindrome(text: str) -> bool:
+    cleaned = ''.join(c.lower() for c in text if c.isalnum())
+    return cleaned == cleaned[::-1]
+
+def is_anagram(str1: str, str2: str) -> bool:
+    from collections import Counter
+    return Counter(str1.lower()) == Counter(str2.lower())`
     },
     {
-      id: 'py-decorator',
-      title: 'Timing Decorator with Args',
-      difficulty: 'Beginner',
+      id: 'py-flatten-list',
+      title: 'Nested List Flatten Generator',
+      difficulty: 'Easy',
+      code: `from typing import Any, Iterator
+
+def flatten(items: list[Any]) -> Iterator[Any]:
+    for item in items:
+        if isinstance(item, (list, tuple)):
+            yield from flatten(item)
+        else:
+            yield item`
+    },
+    // Intermediate
+    {
+      id: 'py-timing-decorator',
+      title: 'Execution Timer Decorator',
+      difficulty: 'Intermediate',
       code: `import time
 from functools import wraps
+from typing import Callable, Any
 
-def timing_logger(func):
+def time_tracker(func: Callable) -> Callable:
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         start = time.perf_counter()
         result = func(*args, **kwargs)
-        duration = time.perf_counter() - start
-        print(f"{func.__name__} took {duration:.4f}s")
+        elapsed = time.perf_counter() - start
+        print(f"[{func.__name__}] executed in {elapsed * 1000:.2f}ms")
         return result
     return wrapper`
     },
     {
-      id: 'py-lru-cache',
-      title: 'Doubly Linked LRU Cache Node',
-      difficulty: 'Advanced',
-      code: `class LRUNode:
-    def __init__(self, key: int, val: int):
-        self.key = key
-        self.val = val
-        self.prev = None
-        self.next = None
+      id: 'py-context-manager',
+      title: 'Database Transaction Context',
+      difficulty: 'Intermediate',
+      code: `from contextlib import contextmanager
 
-class LRUCache:
-    def __init__(self, capacity: int):
-        self.cap = capacity
-        self.map = {}
-        self.head = LRUNode(0, 0)
-        self.tail = LRUNode(0, 0)
-        self.head.next = self.tail
-        self.tail.prev = self.head`
+@contextmanager
+def db_transaction(connection):
+    cursor = connection.cursor()
+    try:
+        yield cursor
+        connection.commit()
+    except Exception as error:
+        connection.rollback()
+        raise error
+    finally:
+        cursor.close()`
+    },
+    // Advanced
+    {
+      id: 'py-quicksort-partition',
+      title: 'In-Place Three-Way Quicksort',
+      difficulty: 'Advanced',
+      code: `def quicksort(arr: list[int], low: int = 0, high: int = None) -> None:
+    if high is None:
+        high = len(arr) - 1
+    if low >= high:
+        return
+
+    pivot = arr[low]
+    lt, gt, i = low, high, low + 1
+    while i <= gt:
+        if arr[i] < pivot:
+            arr[lt], arr[i] = arr[i], arr[lt]
+            lt += 1
+            i += 1
+        elif arr[i] > pivot:
+            arr[i], arr[gt] = arr[gt], arr[i]
+            gt -= 1
+        else:
+            i += 1
+
+    quicksort(arr, low, lt - 1)
+    quicksort(arr, gt + 1, high)`
     },
     {
-      id: 'py-context-manager',
-      title: 'Database Connection Context Manager',
-      difficulty: 'Intermediate',
-      code: `class DatabaseSession:
-    def __init__(self, dsn: str):
-        self.dsn = dsn
-        self.conn = None
+      id: 'py-priority-queue',
+      title: 'Min-Heap Priority Queue Implementation',
+      difficulty: 'Advanced',
+      code: `import heapq
+from typing import Generic, TypeVar
 
-    def __enter__(self):
-        self.conn = connect_pool(self.dsn)
-        return self.conn.cursor()
+T = TypeVar('T')
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_type is not None:
-            self.conn.rollback()
-        else:
-            self.conn.commit()
-        self.conn.close()`
+class PriorityQueue(Generic[T]):
+    def __init__(self) -> None:
+        self._queue = []
+        self._index = 0
+
+    def push(self, item: T, priority: float) -> None:
+        heapq.heappush(self._queue, (priority, self._index, item))
+        self._index += 1
+
+    def pop(self) -> T:
+        if not self._queue:
+            raise IndexError("pop from empty priority queue")
+        return heapq.heappop(self._queue)[-1]`
     }
   ],
 
   cpp: [
+    // Easy
     {
-      id: 'cpp-lru',
-      title: 'Thread-Safe Shared Pointer Pool',
-      difficulty: 'Advanced',
-      code: `#include <iostream>
-#include <vector>
-#include <memory>
-#include <algorithm>
+      id: 'cpp-clamp',
+      title: 'Generic Clamp Function',
+      difficulty: 'Easy',
+      code: `#include <algorithm>
+#include <iostream>
 
 template <typename T>
-class ObjectPool {
-private:
-    std::vector<std::unique_ptr<T>> pool;
-public:
-    void add(std::unique_ptr<T> item) {
-        pool.push_back(std::move(item));
-    }
-    size_t size() const noexcept {
-        return pool.size();
-    }
-};`
+constexpr const T& clampValue(const T& val, const T& low, const T& high) {
+    if (val < low) return low;
+    if (high < val) return high;
+    return val;
+}`
     },
     {
       id: 'cpp-binary-search',
-      title: 'Generic Binary Search Iterator',
-      difficulty: 'Beginner',
+      title: 'Standard Vector Binary Search',
+      difficulty: 'Easy',
       code: `#include <vector>
 #include <optional>
 
 template <typename T>
-std::optional<int> binarySearch(const std::vector<T>& vec, const T& target) {
+std::optional<size_t> binarySearch(const std::vector<T>& vec, const T& target) {
     int left = 0;
     int right = static_cast<int>(vec.size()) - 1;
     while (left <= right) {
@@ -206,63 +304,150 @@ std::optional<int> binarySearch(const std::vector<T>& vec, const T& target) {
     return std::nullopt;
 }`
     },
+    // Intermediate
     {
-      id: 'cpp-matrix-transform',
-      title: '2D Vector Matrix Multiplication',
+      id: 'cpp-string-split',
+      title: 'Fast String View Tokenizer',
       difficulty: 'Intermediate',
-      code: `std::vector<std::vector<double>> multiply(
-    const std::vector<std::vector<double>>& A,
-    const std::vector<std::vector<double>>& B) {
-    int rows = A.size();
-    int cols = B[0].size();
-    int inner = B.size();
-    std::vector<std::vector<double>> C(rows, std::vector<double>(cols, 0.0));
+      code: `#include <string_view>
+#include <vector>
 
-    for (int i = 0; i < rows; ++i) {
-        for (int k = 0; k < inner; ++k) {
-            for (int j = 0; j < cols; ++j) {
-                C[i][j] += A[i][k] * B[k][j];
-            }
-        }
+std::vector<std::string_view> split(std::string_view str, char delim) {
+    std::vector<std::string_view> tokens;
+    size_t start = 0;
+    size_t end = str.find(delim);
+
+    while (end != std::string_view::npos) {
+        tokens.push_back(str.substr(start, end - start));
+        start = end + 1;
+        end = str.find(delim, start);
     }
-    return C;
+    tokens.push_back(str.substr(start));
+    return tokens;
 }`
+    },
+    {
+      id: 'cpp-scoped-timer',
+      title: 'RAII Performance Profiler Timer',
+      difficulty: 'Intermediate',
+      code: `#include <chrono>
+#include <iostream>
+#include <string>
+
+class ScopedTimer {
+private:
+    std::string name;
+    std::chrono::high_resolution_clock::time_point start;
+public:
+    explicit ScopedTimer(std::string tag)
+        : name(std::move(tag)), start(std::chrono::high_resolution_clock::now()) {}
+
+    ~ScopedTimer() {
+        auto end = std::chrono::high_resolution_clock::now();
+        auto ms = std::chrono::duration<double, std::milli>(end - start).count();
+        std::cout << name << " took " << ms << " ms\\n";
+    }
+};`
+    },
+    // Advanced
+    {
+      id: 'cpp-object-pool',
+      title: 'Thread-Safe Memory Object Pool',
+      difficulty: 'Advanced',
+      code: `#include <memory>
+#include <vector>
+#include <mutex>
+
+template <typename T>
+class ObjectPool {
+private:
+    std::vector<std::unique_ptr<T>> pool;
+    mutable std::mutex mtx;
+public:
+    void returnObject(std::unique_ptr<T> item) {
+        std::lock_guard<std::mutex> lock(mtx);
+        pool.push_back(std::move(item));
+    }
+
+    std::unique_ptr<T> acquire() {
+        std::lock_guard<std::mutex> lock(mtx);
+        if (pool.empty()) return std::make_unique<T>();
+        auto item = std::move(pool.back());
+        pool.pop_back();
+        return item;
+    }
+};`
     }
   ],
 
   java: [
+    // Easy
     {
-      id: 'java-stream-pipeline',
-      title: 'Stream Filter and Map Aggregation',
-      difficulty: 'Beginner',
-      code: `public class OrderAnalytics {
-    public static Map<String, Double> summarizeByCategory(List<Order> orders) {
-        return orders.stream()
-            .filter(Order::isCompleted)
+      id: 'java-record-dto',
+      title: 'Immutable User Record & Validator',
+      difficulty: 'Easy',
+      code: `public record UserProfile(String id, String username, String email) {
+    public UserProfile {
+        if (username == null || username.isBlank()) {
+            throw new IllegalArgumentException("Username cannot be empty");
+        }
+        if (email == null || !email.contains("@")) {
+            throw new IllegalArgumentException("Invalid email address");
+        }
+    }
+}`
+    },
+    {
+      id: 'java-optional-helper',
+      title: 'Safe Null Handling with Optional',
+      difficulty: 'Easy',
+      code: `import java.util.Optional;
+
+public class ConfigLoader {
+    public static String getProperty(String key, String fallback) {
+        return Optional.ofNullable(System.getenv(key))
+            .filter(val -> !val.isBlank())
+            .orElse(fallback);
+    }
+}`
+    },
+    // Intermediate
+    {
+      id: 'java-stream-grouping',
+      title: 'Stream Grouping and Aggregation',
+      difficulty: 'Intermediate',
+      code: `import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+public class SalesAnalytics {
+    public static Map<String, Double> totalSalesByRegion(List<Transaction> records) {
+        return records.stream()
+            .filter(Transaction::isCompleted)
             .collect(Collectors.groupingBy(
-                Order::getCategory,
-                Collectors.summingDouble(Order::getTotalAmount)
+                Transaction::region,
+                Collectors.summingDouble(Transaction::amount)
             ));
     }
 }`
     },
     {
-      id: 'java-singleton-pattern',
-      title: 'Thread-Safe Double-Checked Locking',
+      id: 'java-singleton',
+      title: 'Double-Checked Locking Singleton',
       difficulty: 'Intermediate',
-      code: `public final class ConfigurationManager {
-    private static volatile ConfigurationManager instance;
-    private final Map<String, String> settings;
+      code: `public final class AppConfig {
+    private static volatile AppConfig instance;
+    private final Map<String, String> properties;
 
-    private ConfigurationManager() {
-        this.settings = new ConcurrentHashMap<>();
+    private AppConfig() {
+        this.properties = new ConcurrentHashMap<>();
     }
 
-    public static ConfigurationManager getInstance() {
+    public static AppConfig getInstance() {
         if (instance == null) {
-            synchronized (ConfigurationManager.class) {
+            synchronized (AppConfig.class) {
                 if (instance == null) {
-                    instance = new ConfigurationManager();
+                    instance = new AppConfig();
                 }
             }
         }
@@ -270,92 +455,128 @@ std::optional<int> binarySearch(const std::vector<T>& vec, const T& target) {
     }
 }`
     },
+    // Advanced
     {
-      id: 'java-priority-queue',
-      title: 'Dijkstra Shortest Path with PriorityQueue',
+      id: 'java-dijkstra',
+      title: 'Dijkstra Algorithm with PriorityQueue',
       difficulty: 'Advanced',
-      code: `public Map<Integer, Integer> findShortestPaths(Graph graph, int startNode) {
-    Map<Integer, Integer> distances = new HashMap<>();
+      code: `public Map<Integer, Integer> findShortestPaths(Graph graph, int start) {
+    Map<Integer, Integer> dist = new HashMap<>();
     PriorityQueue<NodeDistance> pq = new PriorityQueue<>(
-        Comparator.comparingInt(NodeDistance::getDistance)
+        Comparator.comparingInt(NodeDistance::distance)
     );
-    distances.put(startNode, 0);
-    pq.offer(new NodeDistance(startNode, 0));
+    dist.put(start, 0);
+    pq.offer(new NodeDistance(start, 0));
 
     while (!pq.isEmpty()) {
         NodeDistance current = pq.poll();
-        int u = current.getNode();
+        int u = current.node();
         for (Edge edge : graph.getEdges(u)) {
-            int newDist = distances.get(u) + edge.weight;
-            if (newDist < distances.getOrDefault(edge.target, Integer.MAX_VALUE)) {
-                distances.put(edge.target, newDist);
-                pq.offer(new NodeDistance(edge.target, newDist));
+            int newDist = dist.get(u) + edge.weight();
+            if (newDist < dist.getOrDefault(edge.target(), Integer.MAX_VALUE)) {
+                dist.put(edge.target(), newDist);
+                pq.offer(new NodeDistance(edge.target(), newDist));
             }
         }
     }
-    return distances;
+    return dist;
 }`
     }
   ],
 
   html: [
+    // Easy
     {
-      id: 'html-semantic-card',
-      title: 'Semantic Modern Product Card',
-      difficulty: 'Beginner',
-      code: `<article class="product-card" data-category="developer-gear">
-  <figure class="card-media">
-    <img src="/assets/mechanical-keyboard.webp" alt="Tactile Keyboard" loading="lazy" />
-    <span class="badge badge-accent">Featured</span>
-  </figure>
-  <div class="card-content">
-    <h3 class="card-title">Custom 65% Tactile Deck</h3>
-    <p class="card-desc">Factory-lubed switches with aluminum case and PBT keycaps.</p>
-    <div class="card-footer">
-      <span class="price">$149.00</span>
-      <button type="button" class="btn btn-primary">Add to Cart</button>
-    </div>
-  </div>
-</article>`
+      id: 'html-search-bar',
+      title: 'Accessible Search Bar Component',
+      difficulty: 'Easy',
+      code: `<form class="search-box" role="search" aria-label="Site Search">
+  <label for="search-input" class="sr-only">Search syntax</label>
+  <input
+    id="search-input"
+    type="search"
+    name="q"
+    placeholder="Search functions, classes..."
+    autocomplete="off"
+    required
+  />
+  <button type="submit" aria-label="Submit search">
+    <span>Search</span>
+  </button>
+</form>`
     },
     {
-      id: 'html-nav-header',
-      title: 'Accessible Navbar with SVG Icons',
+      id: 'html-badge-card',
+      title: 'Stat Card with Status Indicator',
+      difficulty: 'Easy',
+      code: `<article class="metric-card">
+  <header class="metric-header">
+    <h3 class="metric-title">Live Speed</h3>
+    <span class="status-dot is-active" aria-hidden="true"></span>
+  </header>
+  <div class="metric-value font-mono">112 <span class="unit">wpm</span></div>
+  <p class="metric-desc">Top 5% typing percentile</p>
+</article>`
+    },
+    // Intermediate
+    {
+      id: 'html-nav-toolbar',
+      title: 'Responsive Accessible Navigation Bar',
       difficulty: 'Intermediate',
-      code: `<header class="app-header" role="banner">
-  <nav class="nav-container" aria-label="Main Navigation">
-    <a href="/" class="brand-logo" aria-label="DevType Home">
-      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <path d="M16 18l6-6-6-6M8 6l-6 6 6 6" stroke="currentColor" stroke-width="2"/>
-      </svg>
-      <span class="logo-text">DevType</span>
+      code: `<header class="site-header" role="banner">
+  <nav class="nav-wrapper" aria-label="Main Navigation">
+    <a href="/" class="brand-link">
+      <span class="brand-badge">&lt;/&gt;</span>
+      <strong class="brand-name">DevType</strong>
     </a>
-    <ul class="nav-links" role="list">
-      <li><a href="#typing" class="active">Speed Test</a></li>
-      <li><a href="#leaderboard">Leaderboard</a></li>
-      <li><a href="#stats">Analytics</a></li>
+    <ul class="nav-menu" role="list">
+      <li><a href="#test" class="nav-item is-active">Typing Test</a></li>
+      <li><a href="#leaderboard" class="nav-item">Leaderboard</a></li>
+      <li><a href="#settings" class="nav-item">Settings</a></li>
     </ul>
   </nav>
 </header>`
     },
     {
-      id: 'html-form-dialog',
-      title: 'Accessible Modal Dialog with Form',
+      id: 'html-product-card',
+      title: 'Semantic Modern Product Card',
+      difficulty: 'Intermediate',
+      code: `<article class="product-item" data-id="kb-65-orange">
+  <figure class="product-media">
+    <img src="/assets/orange-keyboard.webp" alt="65% Mechanical Keyboard" loading="lazy" />
+    <span class="badge">Tactile 65%</span>
+  </figure>
+  <div class="product-info">
+    <h4 class="product-title">Solar Amber Mechanical Deck</h4>
+    <p class="product-spec">PBT Keycaps, Factory Lubed Switches, Type-C</p>
+    <div class="product-actions">
+      <span class="price font-mono">$129.00</span>
+      <button type="button" class="btn btn-accent">Order Now</button>
+    </div>
+  </div>
+</article>`
+    },
+    // Advanced
+    {
+      id: 'html-modal-dialog',
+      title: 'Accessible Native Dialog Modal',
       difficulty: 'Advanced',
-      code: `<dialog id="settings-modal" class="modal-backdrop" aria-labelledby="modal-title">
-  <form method="dialog" class="modal-form">
-    <header class="modal-header">
-      <h2 id="modal-title">Custom Preferences</h2>
-      <button type="submit" value="close" class="close-btn" aria-label="Close">✕</button>
+      code: `<dialog id="pref-modal" class="modal-surface" aria-labelledby="dialog-heading">
+  <form method="dialog" class="dialog-content">
+    <header class="dialog-header">
+      <h2 id="dialog-heading">Editor Settings</h2>
+      <button type="submit" value="cancel" class="btn-close" aria-label="Close dialog">✕</button>
     </header>
-    <section class="modal-body">
-      <label for="theme-picker" class="field-label">Color Theme</label>
-      <select id="theme-picker" name="theme" class="select-input">
-        <option value="emerald" selected>Emerald Green</option>
-        <option value="azure">Electric Azure</option>
-        <option value="violet">Cyber Violet</option>
-      </select>
+    <section class="dialog-body">
+      <fieldset class="field-group">
+        <legend>Sound Profile</legend>
+        <label><input type="radio" name="sound" value="thock" checked /> Cream Thock</label>
+        <label><input type="radio" name="sound" value="clicky" /> Blue Click</label>
+      </fieldset>
     </section>
+    <footer class="dialog-footer">
+      <button type="submit" value="save" class="btn btn-primary">Save Changes</button>
+    </footer>
   </form>
 </dialog>`
     }

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, Pause, Play } from 'lucide-react';
 
 export default function TypingArea({
   tokens = [],
@@ -9,17 +9,17 @@ export default function TypingArea({
   accuracy = 100,
   timeRemaining = 60,
   mode = 'time',
-  duration = 60,
-  errorCount = 0,
-  caretStyle = 'block',
+  status = 'idle', // 'idle' | 'running' | 'paused' | 'completed'
+  caretStyle = 'line',
   onRestart,
+  onTogglePause,
   isFocused = true,
   onFocusChange
 }) {
   const containerRef = useRef(null);
   const activeCharRef = useRef(null);
 
-  // Auto-scroll to keep active character in view
+  // Auto-scroll to keep active character smoothly in view
   useEffect(() => {
     if (activeCharRef.current && containerRef.current) {
       const charEl = activeCharRef.current;
@@ -29,63 +29,87 @@ export default function TypingArea({
       const containerScrollTop = container.scrollTop;
       const containerHeight = container.clientHeight;
 
-      if (charTop < containerScrollTop + 30 || charTop > containerScrollTop + containerHeight - 60) {
+      if (charTop < containerScrollTop + 40 || charTop > containerScrollTop + containerHeight - 80) {
         container.scrollTo({
-          top: Math.max(0, charTop - 50),
+          top: Math.max(0, charTop - 60),
           behavior: 'smooth'
         });
       }
     }
   }, [currentIndex]);
 
+  const isPaused = status === 'paused' || (!isFocused && status === 'running');
+
   return (
     <div className="typing-section">
-      {/* Telemetry Stats Bar */}
+      {/* Minimal Telemetry Header */}
       <div className="telemetry-bar">
         <div className="telemetry-stats-group">
-          {/* WPM Stat */}
+          {/* WPM */}
           <div className="telemetry-item">
-            <span className="telemetry-label">WPM</span>
+            <span className="telemetry-label">wpm</span>
             <span className="telemetry-value font-mono">{Math.round(wpm)}</span>
           </div>
 
-          {/* Accuracy Stat */}
+          {/* Accuracy */}
           <div className="telemetry-item">
-            <span className="telemetry-label">ACCURACY</span>
+            <span className="telemetry-label">acc</span>
             <span className="telemetry-value font-mono">{Math.round(accuracy)}%</span>
           </div>
 
-          {/* Time Stat */}
+          {/* Time */}
           <div className="telemetry-item">
-            <span className="telemetry-label">TIME</span>
+            <span className="telemetry-label">time</span>
             <span className="telemetry-value font-mono">
-              {mode === 'time' ? `${timeRemaining}s` : `${timeRemaining}s`}
+              {timeRemaining}s
             </span>
           </div>
         </div>
 
-        {/* Restart Button */}
-        <button
-          type="button"
-          className="restart-btn"
-          onClick={onRestart}
-          title="Restart Test (Esc or Tab + Enter)"
-          aria-label="Restart typing test"
-        >
-          <RotateCcw size={15} />
-          <span>Restart</span>
-        </button>
+        {/* Action Controls: Pause & Restart */}
+        <div className="telemetry-actions">
+          {status === 'running' || status === 'paused' ? (
+            <button
+              type="button"
+              className="telemetry-action-btn"
+              onClick={onTogglePause}
+              title={status === 'paused' ? 'Resume typing' : 'Pause typing'}
+              aria-label="Pause or resume"
+            >
+              {status === 'paused' ? <Play size={14} /> : <Pause size={14} />}
+              <span>{status === 'paused' ? 'Resume' : 'Pause'}</span>
+            </button>
+          ) : null}
+
+          <button
+            type="button"
+            className="telemetry-action-btn"
+            onClick={onRestart}
+            title="Restart Test (Esc)"
+            aria-label="Restart typing test"
+          >
+            <RotateCcw size={14} />
+            <span>Restart <kbd className="btn-kbd">Esc</kbd></span>
+          </button>
+        </div>
       </div>
 
-      {/* Code Editor Card */}
+      {/* Code Editor Window */}
       <div
         ref={containerRef}
-        className={`code-card ${!isFocused ? 'is-blurred' : ''}`}
-        onClick={() => onFocusChange && onFocusChange(true)}
+        className={`code-card ${isPaused ? 'is-blurred' : ''}`}
+        onClick={() => {
+          if (onFocusChange) onFocusChange(true);
+          if (status === 'paused' && onTogglePause) onTogglePause();
+        }}
       >
-        {!isFocused && (
+        {/* Minimalist Pause / Unfocus Banner */}
+        {isPaused && (
           <div className="unfocus-banner">
-            <span>Click to focus</span>
+            <div className="pause-modal-badge">
+              <Play size={16} />
+              <span>Paused — Click or press any key to resume</span>
+            </div>
           </div>
         )}
 
@@ -97,13 +121,13 @@ export default function TypingArea({
             const isCorrect = isTyped && typedChar === item.char;
             const isWrong = isTyped && typedChar !== item.char;
 
-            let charClass = `code-char token-${item.type}`;
-            if (isCurrent) charClass += ` current-char caret-${caretStyle}`;
-            if (isCorrect) charClass += ' char-correct';
+            let charClass = 'code-char';
+            if (isCorrect) charClass += ` token-${item.type} char-correct`;
             if (isWrong) charClass += ' char-incorrect';
-            if (!isTyped && !isCurrent) charClass += ' char-untyped';
+            if (!isTyped) charClass += ` token-${item.type} char-untyped`;
+            if (isCurrent) charClass += ` current-char caret-${caretStyle}`;
 
-            // Special rendering for newlines and spaces
+            // Newlines
             if (item.char === '\n') {
               return (
                 <span
@@ -116,6 +140,7 @@ export default function TypingArea({
               );
             }
 
+            // Spaces
             if (item.char === ' ') {
               return (
                 <span
@@ -143,4 +168,3 @@ export default function TypingArea({
     </div>
   );
 }
-

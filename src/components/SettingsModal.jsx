@@ -43,8 +43,8 @@ export default function SettingsModal({
         {/* Modal Header */}
         <div className="modal-header">
           <div className="modal-title-group">
-            <Sliders size={18} className="accent-text" />
-            <h3 className="modal-title">DevType Preferences</h3>
+            <Sliders size={16} className="accent-text" />
+            <h3 className="modal-title">Preferences</h3>
           </div>
           <button
             type="button"
@@ -52,7 +52,7 @@ export default function SettingsModal({
             onClick={onClose}
             aria-label="Close preferences"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
@@ -65,8 +65,8 @@ export default function SettingsModal({
               className={`sidebar-nav-tab ${activeTab === 'audio' ? 'is-active' : ''}`}
               onClick={() => setActiveTab('audio')}
             >
-              <Volume2 size={16} />
-              <span>Audio Feedback</span>
+              <Volume2 size={15} />
+              <span>Audio</span>
             </button>
 
             <button
@@ -74,17 +74,17 @@ export default function SettingsModal({
               className={`sidebar-nav-tab ${activeTab === 'themes' ? 'is-active' : ''}`}
               onClick={() => setActiveTab('themes')}
             >
-              <Keyboard size={16} />
-              <span>Themes & Mode</span>
+              <Keyboard size={15} />
+              <span>Themes</span>
             </button>
 
             <button
               type="button"
-              className={`sidebar-nav-tab ${activeTab === 'caret' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('caret')}
+              className={`sidebar-nav-tab ${activeTab === 'visuals' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('visuals')}
             >
-              <Type size={16} />
-              <span>Caret & Visuals</span>
+              <Type size={15} />
+              <span>Visuals</span>
             </button>
 
             <button
@@ -92,7 +92,7 @@ export default function SettingsModal({
               className={`sidebar-nav-tab ${activeTab === 'shortcuts' ? 'is-active' : ''}`}
               onClick={() => setActiveTab('shortcuts')}
             >
-              <Command size={16} />
+              <Command size={15} />
               <span>Shortcuts</span>
             </button>
           </nav>
@@ -104,8 +104,7 @@ export default function SettingsModal({
               <div className="settings-tab-pane animate-fade-in">
                 <div className="pref-section">
                   <div className="pref-section-title">
-                    <Volume2 size={15} />
-                    <span>MECHANICAL SWITCH AUDIO PROFILES</span>
+                    <span>Mechanical Switch Audio Profiles</span>
                   </div>
 
                   <div className="sound-profile-grid">
@@ -121,9 +120,9 @@ export default function SettingsModal({
                     ))}
                   </div>
 
-                  <div className="pref-row" style={{ marginTop: '1rem' }}>
+                  <div className="pref-row" style={{ marginTop: '1.25rem' }}>
                     <div className="pref-label-with-val">
-                      <label className="pref-label">Master Volume</label>
+                      <label className="pref-label">Volume</label>
                       <span className="font-mono text-muted">{Math.round(soundVolume * 100)}%</span>
                     </div>
                     <input
@@ -144,10 +143,8 @@ export default function SettingsModal({
             {activeTab === 'themes' && (
               <div className="settings-tab-pane animate-fade-in">
                 <div className="pref-section">
-                  {/* Base Color Mode (Dark vs Light) */}
                   <div className="pref-section-title">
-                    <Sun size={15} />
-                    <span>BASE COLOR MODE</span>
+                    <span>Base Appearance</span>
                   </div>
 
                   <div className="pref-segmented-control" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: '1.25rem' }}>
@@ -156,22 +153,21 @@ export default function SettingsModal({
                       className={`seg-btn ${colorMode === 'dark' ? 'is-active' : ''}`}
                       onClick={() => colorMode !== 'dark' && onToggleColorMode()}
                     >
-                      <Moon size={15} />
-                      <span>Dark Mode</span>
+                      <Moon size={14} />
+                      <span>Dark Theme</span>
                     </button>
                     <button
                       type="button"
                       className={`seg-btn ${colorMode === 'light' ? 'is-active' : ''}`}
                       onClick={() => colorMode !== 'light' && onToggleColorMode()}
                     >
-                      <Sun size={15} />
-                      <span>Light Mode</span>
+                      <Sun size={14} />
+                      <span>Light Theme</span>
                     </button>
                   </div>
 
                   <div className="pref-section-title">
-                    <Keyboard size={15} />
-                    <span>KEYBOARD ACCENT PALETTES</span>
+                    <span>Accent Palettes</span>
                   </div>
 
                   <div className="theme-grid">
@@ -196,21 +192,19 @@ export default function SettingsModal({
               </div>
             )}
 
-            {/* TAB 3: CARET & VISUALS */}
-            {activeTab === 'caret' && (
+            {/* TAB 3: VISUALS & CARET */}
+            {activeTab === 'visuals' && (
               <div className="settings-tab-pane animate-fade-in">
                 <div className="pref-section">
                   <div className="pref-section-title">
-                    <Type size={15} />
-                    <span>CARET STYLE</span>
+                    <span>Caret Style</span>
                   </div>
 
-                  <div className="pref-segmented-control" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: '1.25rem' }}>
+                  <div className="pref-segmented-control" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: '1.25rem' }}>
                     {[
                       { id: 'line', label: 'Line' },
                       { id: 'block', label: 'Block' },
-                      { id: 'underline', label: 'Underline' },
-                      { id: 'smooth', label: 'Pulse Glow' }
+                      { id: 'underline', label: 'Underline' }
                     ].map((c) => (
                       <button
                         key={c.id}
@@ -224,31 +218,30 @@ export default function SettingsModal({
                   </div>
 
                   <div className="pref-section-title">
-                    <Sparkles size={15} />
-                    <span>VISUAL BEHAVIOR</span>
+                    <span>Keyboard & Behavior</span>
                   </div>
 
                   <div className="pref-toggle-list">
                     <div className="pref-toggle-item" onClick={onToggleKeyHints}>
                       <div>
-                        <div className="toggle-label">Visual Keycap Hints</div>
-                        <div className="toggle-desc">Highlights target key on the virtual keyboard</div>
+                        <div className="toggle-label">Keycap Target Hints</div>
+                        <div className="toggle-desc">Highlights expected key on virtual keyboard</div>
                       </div>
                       <div className={`switch-pill ${showKeyHints ? 'is-on' : ''}`} />
                     </div>
 
                     <div className="pref-toggle-item" onClick={onToggleKeyboard}>
                       <div>
-                        <div className="toggle-label">Virtual Keyboard Visibility</div>
-                        <div className="toggle-desc">Show tactile 60% layout underneath typing area</div>
+                        <div className="toggle-label">Virtual Keyboard</div>
+                        <div className="toggle-desc">Display mechanical keyboard layout below typing area</div>
                       </div>
                       <div className={`switch-pill ${showKeyboard ? 'is-on' : ''}`} />
                     </div>
 
                     <div className="pref-toggle-item" onClick={onToggleMasterMode}>
                       <div>
-                        <div className="toggle-label text-warning">Master Mode (Hardcore)</div>
-                        <div className="toggle-desc">Instantly restarts the test on a single syntax typo</div>
+                        <div className="toggle-label">Master Mode</div>
+                        <div className="toggle-desc">Instantly restarts test on a single syntax error</div>
                       </div>
                       <div className={`switch-pill ${masterMode ? 'is-on' : ''}`} />
                     </div>
@@ -262,13 +255,12 @@ export default function SettingsModal({
               <div className="settings-tab-pane animate-fade-in">
                 <div className="pref-section">
                   <div className="pref-section-title">
-                    <Command size={15} />
-                    <span>KEYBOARD SHORTCUTS REFERENCE</span>
+                    <span>Keyboard Shortcuts</span>
                   </div>
 
                   <div className="shortcuts-grid">
                     <div className="shortcut-row">
-                      <span className="shortcut-keys"><kbd>Tab</kbd> + <kbd>Enter</kbd> or <kbd>Esc</kbd></span>
+                      <span className="shortcut-keys"><kbd>Esc</kbd></span>
                       <span className="shortcut-desc">Instant Test Restart</span>
                     </div>
                     <div className="shortcut-row">
@@ -276,8 +268,12 @@ export default function SettingsModal({
                       <span className="shortcut-desc">Next Code Snippet</span>
                     </div>
                     <div className="shortcut-row">
+                      <span className="shortcut-keys"><kbd>Tab</kbd></span>
+                      <span className="shortcut-desc">Indents 2 spaces</span>
+                    </div>
+                    <div className="shortcut-row">
                       <span className="shortcut-keys"><kbd>Click outside</kbd></span>
-                      <span className="shortcut-desc">Pause & Blur Focus</span>
+                      <span className="shortcut-desc">Pause & preserve progress</span>
                     </div>
                   </div>
                 </div>

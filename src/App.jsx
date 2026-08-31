@@ -7,17 +7,18 @@ import ResultsScreen from './components/ResultsScreen';
 import SettingsModal from './components/SettingsModal';
 import AboutModal from './components/AboutModal';
 
-import { SNIPPETS, LANGUAGES } from './data/snippets';
+import { SNIPPETS, LANGUAGES, DIFFICULTIES } from './data/snippets';
 import { KEYBOARD_THEMES, getThemeById } from './utils/themes';
 import { tokenizeCode } from './utils/tokenizer';
 import { playKeySound, playCompletionSound } from './utils/audio';
 
 export default function App() {
-  // Config state
+  // Configuration State
   const [selectedLanguage, setSelectedLanguage] = useState('javascript');
+  const [difficulty, setDifficulty] = useState('All');
   const [snippetIndex, setSnippetIndex] = useState(0);
   const [mode, setMode] = useState('time'); // 'time' | 'snippet'
-  const [duration, setDuration] = useState(60); // 15, 30, 60, 120 for time mode
+  const [duration, setDuration] = useState(60); // 15, 30, 60, 120
   const [themeId, setThemeId] = useState('orange');
   const [colorMode, setColorMode] = useState(() => {
     try {
@@ -34,19 +35,21 @@ export default function App() {
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
-
   const [masterMode, setMasterMode] = useState(false);
-  const [blindMode, setBlindMode] = useState(false);
-  const [difficulty, setDifficulty] = useState('All');
 
   // Active theme object
   const activeTheme = useMemo(() => getThemeById(themeId), [themeId]);
 
-  // Current snippet & tokens
-  const languageSnippets = useMemo(() => SNIPPETS[selectedLanguage] || SNIPPETS.javascript, [selectedLanguage]);
+  // Snippets filtered by language and difficulty
+  const languageSnippets = useMemo(() => {
+    const allForLang = SNIPPETS[selectedLanguage] || SNIPPETS.javascript;
+    if (difficulty === 'All') return allForLang;
+    const filtered = allForLang.filter((s) => s.difficulty === difficulty);
+    return filtered.length > 0 ? filtered : allForLang;
+  }, [selectedLanguage, difficulty]);
+
   const currentSnippet = useMemo(() => {
-    const snips = languageSnippets;
-    return snips[snippetIndex % snips.length];
+    return languageSnippets[snippetIndex % languageSnippets.length] || languageSnippets[0];
   }, [languageSnippets, snippetIndex]);
 
   const tokens = useMemo(() => {
@@ -54,31 +57,24 @@ export default function App() {
   }, [currentSnippet, selectedLanguage]);
 
   // Test Runtime State
-  const [status, setStatus] = useState('idle'); // 'idle' | 'running' | 'completed'
+  const [status, setStatus] = useState('idle'); // 'idle' | 'running' | 'paused' | 'completed'
   const [currentIndex, setCurrentIndex] = useState(0);
   const [typedChars, setTypedChars] = useState([]);
   const [timeRemaining, setTimeRemaining] = useState(duration);
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [startTime, setStartTime] = useState(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [accumulatedMs, setAccumulatedMs] = useState(0);
+  const [segmentStartTime, setSegmentStartTime] = useState(null);
+
   const [errorCount, setErrorCount] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
   const [incorrectCount, setIncorrectCount] = useState(0);
   const [extraCount, setExtraCount] = useState(0);
+
   const [timeline, setTimeline] = useState([]);
   const [pressedKeys, setPressedKeys] = useState(new Set());
   const [lastErrorKey, setLastErrorKey] = useState(null);
+  const [lastCorrectKey, setLastCorrectKey] = useState(null);
   const [isFocused, setIsFocused] = useState(true);
-
-  // Session Stats
-  const [sessionStats, setSessionStats] = useState(() => {
-    try {
-      const saved = localStorage.getItem('devtype_session_stats');
-      return saved ? JSON.parse(saved) : { testsCompleted: 0, bestWpm: 0 };
-    } catch {
-      return { testsCompleted: 0, bestWpm: 0 };
-    }
-  });
-
   const [finalStats, setFinalStats] = useState(null);
 
   const timerRef = useRef(null);
@@ -89,7 +85,8 @@ export default function App() {
     typedChars,
     tokens,
     currentSnippet,
-    startTime,
+    segmentStartTime,
+    accumulatedMs,
     mode,
     duration,
     correctCount,
@@ -100,7 +97,10 @@ export default function App() {
     soundVolume,
     masterMode,
     timeRemaining,
-    elapsedTime
+    elapsedSeconds,
+    selectedLanguage,
+    timeline,
+    isFocused
   };
 
   // Toggle dark/light color mode
@@ -114,7 +114,7 @@ export default function App() {
     });
   }, []);
 
-  // Sync CSS theme variables and data-theme attribute to root element
+  // Sync CSS theme variables and data-theme attribute
   useEffect(() => {
     const root = document.documentElement;
     root.setAttribute('data-theme', colorMode);
@@ -142,24 +142,23 @@ export default function App() {
     root.style.setProperty('--kb-target-glow', activeTheme.keycapTargetGlow);
   }, [activeTheme, colorMode]);
 
-
-
-
-  // Restart typing test
+  // Restart typing test cleanly
   const handleRestart = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     setStatus('idle');
     setCurrentIndex(0);
     setTypedChars([]);
     setTimeRemaining(duration);
-    setElapsedTime(0);
-    setStartTime(null);
+    setElapsedSeconds(0);
+    setAccumulatedMs(0);
+    setSegmentStartTime(null);
     setErrorCount(0);
     setCorrectCount(0);
     setIncorrectCount(0);
     setExtraCount(0);
     setTimeline([]);
     setLastErrorKey(null);
+    setLastCorrectKey(null);
     setIsFocused(true);
     setFinalStats(null);
   }, [duration]);
@@ -177,6 +176,13 @@ export default function App() {
     handleRestart();
   }, [handleRestart]);
 
+  // Switch difficulty
+  const handleSelectDifficulty = useCallback((diff) => {
+    setDifficulty(diff);
+    setSnippetIndex(0);
+    handleRestart();
+  }, [handleRestart]);
+
   // Switch mode
   const handleSelectMode = useCallback((newMode) => {
     setMode(newMode);
@@ -190,23 +196,37 @@ export default function App() {
     handleRestart();
   }, [handleRestart]);
 
-  // Calculate live metrics
+  // Pause / Resume toggle
+  const handleTogglePause = useCallback(() => {
+    if (status === 'running') {
+      if (timerRef.current) clearInterval(timerRef.current);
+      const currentSegment = segmentStartTime ? Date.now() - segmentStartTime : 0;
+      setAccumulatedMs((prev) => prev + currentSegment);
+      setSegmentStartTime(null);
+      setStatus('paused');
+    } else if (status === 'paused') {
+      setSegmentStartTime(Date.now());
+      setStatus('running');
+      setIsFocused(true);
+    }
+  }, [status, segmentStartTime]);
+
+  // Accurate live WPM & Accuracy calculation
   const totalTyped = correctCount + incorrectCount;
-  const timeInMinutes = (status === 'running' || status === 'completed') && startTime
-    ? Math.max(0.01, (Date.now() - startTime) / 60000)
-    : 0.01;
-  const liveWpm = Math.max(0, (correctCount / 5) / timeInMinutes);
-  const liveRawWpm = Math.max(0, (totalTyped / 5) / timeInMinutes);
+  const currentTotalActiveMs = accumulatedMs + (status === 'running' && segmentStartTime ? (Date.now() - segmentStartTime) : 0);
+  const activeMinutes = Math.max(0.01, currentTotalActiveMs / 60000);
+  const liveWpm = Math.max(0, (correctCount / 5) / activeMinutes);
+  const liveRawWpm = Math.max(0, (totalTyped / 5) / activeMinutes);
   const liveAccuracy = totalTyped > 0 ? (correctCount / totalTyped) * 100 : 100;
 
   // Complete test handler
-  const completeTest = useCallback((finalTime) => {
+  const completeTest = useCallback((finalTotalSeconds) => {
     if (timerRef.current) clearInterval(timerRef.current);
     setStatus('completed');
     playCompletionSound(soundVolume);
 
     const s = stateRef.current;
-    const timeSpent = Math.max(1, finalTime);
+    const timeSpent = Math.max(1, finalTotalSeconds);
     const finalMinutes = timeSpent / 60;
     const finalWpm = Math.max(0, (s.correctCount / 5) / finalMinutes);
     const finalRaw = Math.max(0, ((s.correctCount + s.incorrectCount) / 5) / finalMinutes);
@@ -227,58 +247,37 @@ export default function App() {
       language: selectedLanguage,
       snippetTitle: s.currentSnippet.title,
       difficulty: s.currentSnippet.difficulty,
-      timeline: timeline
+      timeline: s.timeline
     });
+  }, [soundVolume, selectedLanguage]);
 
-    setSessionStats((prev) => {
-      const updated = {
-        testsCompleted: prev.testsCompleted + 1,
-        bestWpm: Math.max(prev.bestWpm, finalWpm)
-      };
-      try {
-        localStorage.setItem('devtype_session_stats', JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-  }, [soundVolume, selectedLanguage, timeline]);
-
-  // Ticker for running test
+  // 1-second interval ticker for running tests
   useEffect(() => {
     if (status === 'running') {
       timerRef.current = setInterval(() => {
         const s = stateRef.current;
         const now = Date.now();
-        const secondsElapsed = Math.floor((now - s.startTime) / 1000);
+        const seg = s.segmentStartTime ? now - s.segmentStartTime : 0;
+        const totalMs = s.accumulatedMs + seg;
+        const totalSecs = Math.floor(totalMs / 1000);
 
-        setElapsedTime(secondsElapsed);
+        setElapsedSeconds(totalSecs);
+
+        const mins = Math.max(0.01, totalSecs / 60);
+        const curWpm = Math.max(0, (s.correctCount / 5) / mins);
+        const curRaw = Math.max(0, ((s.correctCount + s.incorrectCount) / 5) / mins);
+
+        setTimeline((prev) => [
+          ...prev,
+          { time: totalSecs, wpm: curWpm, rawWpm: curRaw, errors: s.errorCount }
+        ]);
 
         if (s.mode === 'time') {
-          const remaining = Math.max(0, s.duration - secondsElapsed);
-          setTimeRemaining(remaining);
-
-          // Record timeline for graph
-          const mins = Math.max(0.01, secondsElapsed / 60);
-          const currentWpm = Math.max(0, (s.correctCount / 5) / mins);
-          const currentRaw = Math.max(0, ((s.correctCount + s.incorrectCount) / 5) / mins);
-
-          setTimeline((prev) => [
-            ...prev,
-            { time: secondsElapsed, wpm: currentWpm, rawWpm: currentRaw, errors: s.errorCount }
-          ]);
-
-          if (remaining <= 0) {
+          const rem = Math.max(0, s.duration - totalSecs);
+          setTimeRemaining(rem);
+          if (rem <= 0) {
             completeTest(s.duration);
           }
-        } else {
-          // Snippet mode
-          const mins = Math.max(0.01, secondsElapsed / 60);
-          const currentWpm = Math.max(0, (s.correctCount / 5) / mins);
-          const currentRaw = Math.max(0, ((s.correctCount + s.incorrectCount) / 5) / mins);
-
-          setTimeline((prev) => [
-            ...prev,
-            { time: secondsElapsed, wpm: currentWpm, rawWpm: currentRaw, errors: s.errorCount }
-          ]);
         }
       }, 1000);
 
@@ -286,47 +285,71 @@ export default function App() {
     }
   }, [status, completeTest]);
 
+  // Window blur listener to auto-pause when leaving window
+  useEffect(() => {
+    const handleBlur = () => {
+      setIsFocused(false);
+      if (stateRef.current.status === 'running') {
+        handleTogglePause();
+      }
+    };
+    const handleFocus = () => {
+      setIsFocused(true);
+    };
+
+    window.addEventListener('blur', handleBlur);
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [handleTogglePause]);
+
   // Main Keystroke Handler
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Don't intercept if typing in settings modal or inputs
-      if (isSettingsOpen) return;
+      // Don't intercept if modals or inputs are active
+      if (isSettingsOpen || isAboutOpen) return;
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
       const code = e.code;
       const key = e.key;
 
-      // Update pressed keys for virtual keyboard
+      // Update physical pressed keycap set
       setPressedKeys((prev) => {
         const next = new Set(prev);
         next.add(code);
         return next;
       });
 
-      // Quick restart shortcuts: Tab + Enter or Esc
+      // Quick restart shortcuts: Esc
       if (key === 'Escape') {
         e.preventDefault();
         handleRestart();
         return;
       }
 
+      // Next snippet shortcut: Ctrl + Enter
       if (e.ctrlKey && key === 'Enter') {
         e.preventDefault();
         handleNextSnippet();
         return;
       }
 
-      if (key === 'Tab' && e.altKey) {
-        return;
-      }
-
-      // If test is completed, allow Esc/Enter to restart
+      // If test is completed, allow Enter to restart
       if (stateRef.current.status === 'completed') {
         if (key === 'Enter') {
           e.preventDefault();
           handleRestart();
         }
         return;
+      }
+
+      // Resume if paused
+      if (stateRef.current.status === 'paused') {
+        if (key.length === 1 || key === 'Enter' || key === 'Tab' || key === 'Backspace') {
+          handleTogglePause();
+        }
       }
 
       // Ignore modifier keys by themselves
@@ -353,21 +376,21 @@ export default function App() {
       if (s.status === 'idle') {
         if (key.length === 1 || key === 'Enter' || key === 'Tab') {
           setStatus('running');
-          setStartTime(Date.now());
+          setSegmentStartTime(Date.now());
         } else {
           return;
         }
       }
 
-      // Prevent default scrolling on space / tab / enter
+      // Prevent default page scroll on space / tab / enter
       if (key === ' ' || key === 'Tab' || key === 'Enter') {
         e.preventDefault();
       }
 
-      // Convert pressed key to code character
+      // Map keys to code characters
       let inputChar = key;
       if (key === 'Enter') inputChar = '\n';
-      if (key === 'Tab') inputChar = '  '; // 2 spaces
+      if (key === 'Tab') inputChar = '  '; // 2 spaces standard for code
 
       // Character evaluation
       if (inputChar === targetChar) {
@@ -378,32 +401,39 @@ export default function App() {
         const nextIdx = s.currentIndex + 1;
         setCurrentIndex(nextIdx);
 
+        // Correct key visual feedback on keyboard
+        setLastCorrectKey(code);
+        setTimeout(() => setLastCorrectKey(null), 150);
+
         // Check if finished in snippet mode
         if (s.mode === 'snippet' && nextIdx >= targetCode.length) {
-          const totalSecs = Math.max(1, Math.round((Date.now() - (s.startTime || Date.now())) / 1000));
+          const curSegment = s.segmentStartTime ? Date.now() - s.segmentStartTime : 0;
+          const totalSecs = Math.max(1, Math.round((s.accumulatedMs + curSegment) / 1000));
           completeTest(totalSecs);
         }
       } else {
         // Incorrect character typed
-        playKeySound(s.soundType, s.soundVolume, true, inputChar === ' ');
+        playKeySound(s.soundType, s.soundVolume, false, inputChar === ' ');
         setErrorCount((prev) => prev + 1);
         setIncorrectCount((prev) => prev + 1);
+
+        // Error key visual feedback on keyboard
         setLastErrorKey(code);
         setTimeout(() => setLastErrorKey(null), 300);
 
         if (s.masterMode) {
-          // Hardcore Master Mode: Fail immediately
           handleRestart();
           return;
         }
 
-        // Allow advancing with error
+        // Advance index with error
         setTypedChars((prev) => [...prev, inputChar]);
         const nextIdx = s.currentIndex + 1;
         setCurrentIndex(nextIdx);
 
         if (s.mode === 'snippet' && nextIdx >= targetCode.length) {
-          const totalSecs = Math.max(1, Math.round((Date.now() - (s.startTime || Date.now())) / 1000));
+          const curSegment = s.segmentStartTime ? Date.now() - s.segmentStartTime : 0;
+          const totalSecs = Math.max(1, Math.round((s.accumulatedMs + curSegment) / 1000));
           completeTest(totalSecs);
         }
       }
@@ -424,14 +454,13 @@ export default function App() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [isSettingsOpen, handleRestart, handleNextSnippet, completeTest]);
+  }, [isSettingsOpen, isAboutOpen, handleRestart, handleNextSnippet, handleTogglePause, completeTest]);
 
-  // Target character for virtual keyboard hint
+  // Expected character for virtual keyboard hint
   const currentTargetChar = currentSnippet.code[currentIndex] || '';
 
   // Handle virtual key click from mouse/touch
   const handleVirtualKeyPress = (code) => {
-    // Optional virtual click fallback
     const keyMap = {
       Space: ' ',
       Enter: '\n',
@@ -449,7 +478,7 @@ export default function App() {
 
   return (
     <div className="app-layout">
-      {/* Top Header */}
+      {/* Streamlined Minimalist Header */}
       <Header
         soundType={soundType}
         soundVolume={soundVolume}
@@ -459,14 +488,16 @@ export default function App() {
         onToggleColorMode={handleToggleColorMode}
       />
 
-      {/* Main App Content Area */}
+      {/* Main Content Area */}
       <main className="main-content">
         {status !== 'completed' ? (
           <div className="typing-view animate-fade-in">
-            {/* Top Mode & Language Config Bar */}
+            {/* Minimal Config Bar */}
             <ConfigBar
               selectedLanguage={selectedLanguage}
               onSelectLanguage={handleSelectLanguage}
+              difficulty={difficulty}
+              onSelectDifficulty={handleSelectDifficulty}
               mode={mode}
               onSelectMode={handleSelectMode}
               duration={duration}
@@ -474,36 +505,37 @@ export default function App() {
               disabled={status === 'running'}
             />
 
-            {/* Syntax Typing Centerpiece */}
+            {/* Core Typing Engine Window */}
             <TypingArea
               tokens={tokens}
               typedChars={typedChars}
               currentIndex={currentIndex}
               wpm={liveWpm}
               accuracy={liveAccuracy}
-              timeRemaining={mode === 'time' ? timeRemaining : elapsedTime}
+              timeRemaining={mode === 'time' ? timeRemaining : elapsedSeconds}
               mode={mode}
-              duration={duration}
-              errorCount={errorCount}
+              status={status}
               caretStyle={caretStyle}
               onRestart={handleRestart}
+              onTogglePause={handleTogglePause}
               isFocused={isFocused}
               onFocusChange={setIsFocused}
             />
 
-            {/* Tactile Virtual Keyboard */}
+            {/* Interactive Tactile Orange Mechanical Keyboard */}
             {showKeyboard && (
               <VirtualKeyboard
                 pressedKeys={pressedKeys}
                 targetChar={currentTargetChar}
                 lastErrorKey={lastErrorKey}
+                lastCorrectKey={lastCorrectKey}
                 showHints={showKeyHints}
                 onVirtualKeyPress={handleVirtualKeyPress}
               />
             )}
           </div>
         ) : (
-          /* Results Screen */
+          /* Sleek Minimalist Results Screen */
           <ResultsScreen
             stats={finalStats || {
               wpm: liveWpm,
@@ -514,7 +546,7 @@ export default function App() {
               extraChars: extraCount,
               totalChars: totalTyped,
               duration: mode === 'time' ? duration : 0,
-              timeTaken: mode === 'time' ? duration - timeRemaining : elapsedTime,
+              timeTaken: mode === 'time' ? duration - timeRemaining : elapsedSeconds,
               language: selectedLanguage,
               snippetTitle: currentSnippet.title,
               difficulty: currentSnippet.difficulty,
@@ -529,12 +561,12 @@ export default function App() {
         )}
       </main>
 
-      {/* Footer */}
+      {/* Minimal Footer */}
       <footer className="app-footer">
         <div className="footer-links">
-          <span>DevType v1.0</span>
+          <span>DevType v2.0</span>
           <span className="footer-divider">•</span>
-          <span>Made for Ergonomic Syntax Typing</span>
+          <span>Ergonomic Syntax Speedtyper</span>
           <span className="footer-divider">•</span>
           <button
             type="button"
@@ -546,7 +578,7 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Settings & Preferences Modal (Horizontal Layout) */}
+      {/* Settings Modal */}
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
@@ -568,7 +600,7 @@ export default function App() {
         onToggleColorMode={handleToggleColorMode}
       />
 
-      {/* About Application Modal */}
+      {/* About Modal */}
       <AboutModal
         isOpen={isAboutOpen}
         onClose={() => setIsAboutOpen(false)}
@@ -576,4 +608,3 @@ export default function App() {
     </div>
   );
 }
-
