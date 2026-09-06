@@ -11,6 +11,8 @@ export default function TypingArea({
   mode = 'time',
   status = 'idle', // 'idle' | 'running' | 'paused' | 'completed'
   caretStyle = 'line',
+  showWhitespace = true,
+  autoIndent = true,
   onRestart,
   onTogglePause,
   isFocused = true,
@@ -121,11 +123,24 @@ export default function TypingArea({
             const isCorrect = isTyped && typedChar === item.char;
             const isWrong = isTyped && typedChar !== item.char;
 
+            // Check if space is part of leading line indentation
+            let isLeadingIndent = false;
+            if (item.char === ' ') {
+              let checkBack = idx - 1;
+              while (checkBack >= 0 && tokens[checkBack]?.char === ' ') {
+                checkBack--;
+              }
+              if (checkBack === -1 || tokens[checkBack]?.char === '\n') {
+                isLeadingIndent = true;
+              }
+            }
+
             let charClass = 'code-char';
             if (isCorrect) charClass += ` token-${item.type} char-correct`;
             if (isWrong) charClass += ' char-incorrect';
             if (!isTyped) charClass += ` token-${item.type} char-untyped`;
             if (isCurrent) charClass += ` current-char caret-${caretStyle}`;
+            if (isLeadingIndent) charClass += ' char-indent-space';
 
             // Newlines
             if (item.char === '\n') {
@@ -134,7 +149,9 @@ export default function TypingArea({
                   key={`char-${idx}`}
                   ref={isCurrent ? activeCharRef : null}
                   className={`${charClass} char-newline`}
+                  data-char="newline"
                 >
+                  {isCurrent ? <span className="newline-cue">↵</span> : null}
                   {'\n'}
                 </span>
               );
@@ -147,8 +164,15 @@ export default function TypingArea({
                   key={`char-${idx}`}
                   ref={isCurrent ? activeCharRef : null}
                   className={`${charClass} char-space`}
+                  data-char="space"
                 >
-                  {isWrong ? '•' : ' '}
+                  {isWrong ? (
+                    '•'
+                  ) : showWhitespace && !isTyped ? (
+                    <span className="space-dot">·</span>
+                  ) : (
+                    ' '
+                  )}
                 </span>
               );
             }

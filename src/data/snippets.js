@@ -6,11 +6,42 @@ export const LANGUAGES = [
   { id: 'html', name: 'HTML', ext: '.html' }
 ];
 
+export const CONTENT_CATEGORIES = [
+  { id: 'code', name: 'Full Code', desc: 'Real-world multi-line code snippets' },
+  { id: 'keywords', name: 'Keywords & Flow', desc: 'Clean 1-2 line expressions & core keywords' },
+  { id: 'words', name: 'Dev Words', desc: 'Top developer vocabulary in camelCase/PascalCase' },
+  { id: 'symbols', name: 'Symbols Drill', desc: 'Targeted brackets, operators & symbol mastery' }
+];
+
 export const DIFFICULTIES = ['All', 'Easy', 'Intermediate', 'Advanced'];
 
 export const SNIPPETS = {
   javascript: [
-    // Easy
+    // Easy (Beginner Friendly)
+    {
+      id: 'js-add-function',
+      title: 'Simple Addition Function',
+      difficulty: 'Easy',
+      code: `function add(a, b) {
+  return a + b;
+}`
+    },
+    {
+      id: 'js-is-even',
+      title: 'Even Number Check',
+      difficulty: 'Easy',
+      code: `const isEven = (num) => {
+  return num % 2 === 0;
+};`
+    },
+    {
+      id: 'js-greet',
+      title: 'Greeting Generator',
+      difficulty: 'Easy',
+      code: `function greet(name) {
+  return 'Hello, ' + name + '!';
+}`
+    },
     {
       id: 'js-clamp-utility',
       title: 'Clamp Number Utility',
@@ -153,7 +184,21 @@ export const SNIPPETS = {
   ],
 
   python: [
-    // Easy
+    // Easy (Beginner Friendly)
+    {
+      id: 'py-square',
+      title: 'Square Number',
+      difficulty: 'Easy',
+      code: `def square(n: int) -> int:
+    return n * n`
+    },
+    {
+      id: 'py-is-positive',
+      title: 'Positive Check',
+      difficulty: 'Easy',
+      code: `def is_positive(x: float) -> bool:
+    return x > 0`
+    },
     {
       id: 'py-palindrome',
       title: 'Palindrome & Anagram Checker',
@@ -269,7 +314,23 @@ class PriorityQueue(Generic[T]):
   ],
 
   cpp: [
-    // Easy
+    // Easy (Beginner Friendly)
+    {
+      id: 'cpp-square',
+      title: 'Simple Square Function',
+      difficulty: 'Easy',
+      code: `int square(int x) {
+    return x * x;
+}`
+    },
+    {
+      id: 'cpp-is-even',
+      title: 'Even Number Predicate',
+      difficulty: 'Easy',
+      code: `bool isEven(int n) {
+    return n % 2 == 0;
+}`
+    },
     {
       id: 'cpp-clamp',
       title: 'Generic Clamp Function',
@@ -381,7 +442,23 @@ public:
   ],
 
   java: [
-    // Easy
+    // Easy (Beginner Friendly)
+    {
+      id: 'java-multiply',
+      title: 'Multiply Integers',
+      difficulty: 'Easy',
+      code: `public int multiply(int a, int b) {
+    return a * b;
+}`
+    },
+    {
+      id: 'java-is-empty',
+      title: 'String Empty Check',
+      difficulty: 'Easy',
+      code: `public boolean isEmpty(String str) {
+    return str != null && str.isEmpty();
+}`
+    },
     {
       id: 'java-record-dto',
       title: 'Immutable User Record & Validator',
@@ -485,7 +562,23 @@ public class SalesAnalytics {
   ],
 
   html: [
-    // Easy
+    // Easy (Beginner Friendly)
+    {
+      id: 'html-button',
+      title: 'Simple Action Button',
+      difficulty: 'Easy',
+      code: `<button class="btn btn-primary">
+  <span>Click Here</span>
+</button>`
+    },
+    {
+      id: 'html-badge',
+      title: 'Status Badge',
+      difficulty: 'Easy',
+      code: `<span class="badge badge-success">
+  Active
+</span>`
+    },
     {
       id: 'html-search-bar',
       title: 'Accessible Search Bar Component',
@@ -582,3 +675,214 @@ public class SalesAnalytics {
     }
   ]
 };
+
+export const KEYWORDS_SNIPPETS = {
+  javascript: [
+    {
+      id: 'kw-js-1',
+      title: 'Async Await Fetch',
+      difficulty: 'Easy',
+      code: `const data = await fetch(url);`
+    },
+    {
+      id: 'kw-js-2',
+      title: 'Array Map & Arrow',
+      difficulty: 'Easy',
+      code: `const names = users.map(user => user.name);`
+    },
+    {
+      id: 'kw-js-3',
+      title: 'Conditional Return',
+      difficulty: 'Easy',
+      code: `if (isValid && hasToken) return true;`
+    },
+    {
+      id: 'kw-js-4',
+      title: 'Destructuring & Spread',
+      difficulty: 'Intermediate',
+      code: `const { id, ...rest } = payload;`
+    },
+    {
+      id: 'kw-js-5',
+      title: 'Try Catch Exception',
+      difficulty: 'Intermediate',
+      code: `try { await run(); } catch (err) { log(err); }`
+    },
+    {
+      id: 'kw-js-6',
+      title: 'For Of Loop Traversal',
+      difficulty: 'Intermediate',
+      code: `for (const item of items) { process(item); }`
+    }
+  ],
+  python: [
+    {
+      id: 'kw-py-1',
+      title: 'List Comprehension',
+      difficulty: 'Easy',
+      code: `doubled = [x * 2 for x in items if x > 0]`
+    },
+    {
+      id: 'kw-py-2',
+      title: 'With Context Manager',
+      difficulty: 'Easy',
+      code: `with open("config.json") as file: data = file.read()`
+    },
+    {
+      id: 'kw-py-3',
+      title: 'Def with Type Hints',
+      difficulty: 'Easy',
+      code: `def get_user(user_id: int) -> dict: return store[user_id]`
+    },
+    {
+      id: 'kw-py-4',
+      title: 'Dictionary Comprehension',
+      difficulty: 'Intermediate',
+      code: `lookup = {item.id: item.name for item in items}`
+    },
+    {
+      id: 'kw-py-5',
+      title: 'Try Except Finally Block',
+      difficulty: 'Intermediate',
+      code: `try: save(data) except Exception as err: log(err)`
+    }
+  ],
+  cpp: [
+    {
+      id: 'kw-cpp-1',
+      title: 'Range-Based For Loop',
+      difficulty: 'Easy',
+      code: `for (const auto& item : items) std::cout << item;`
+    },
+    {
+      id: 'kw-cpp-2',
+      title: 'Vector Initialization',
+      difficulty: 'Easy',
+      code: `std::vector<int> numbers = {1, 2, 3, 4, 5};`
+    },
+    {
+      id: 'kw-cpp-3',
+      title: 'Constexpr Auto Max',
+      difficulty: 'Easy',
+      code: `constexpr auto limit = 100; if (val > limit) return;`
+    },
+    {
+      id: 'kw-cpp-4',
+      title: 'Unique Pointer Make',
+      difficulty: 'Intermediate',
+      code: `auto node = std::make_unique<Node>(val);`
+    }
+  ],
+  java: [
+    {
+      id: 'kw-java-1',
+      title: 'Stream Filter & Collect',
+      difficulty: 'Easy',
+      code: `List<String> list = items.stream().filter(x -> x.length() > 0).toList();`
+    },
+    {
+      id: 'kw-java-2',
+      title: 'Optional OrElse',
+      difficulty: 'Easy',
+      code: `String value = Optional.ofNullable(input).orElse("default");`
+    },
+    {
+      id: 'kw-java-3',
+      title: 'Record Declaration',
+      difficulty: 'Easy',
+      code: `public record Point(int x, int y) {}`
+    },
+    {
+      id: 'kw-java-4',
+      title: 'Enhanced For Loop',
+      difficulty: 'Intermediate',
+      code: `for (String item : items) { System.out.println(item); }`
+    }
+  ],
+  html: [
+    {
+      id: 'kw-html-1',
+      title: 'Semantic Navigation Item',
+      difficulty: 'Easy',
+      code: `<a href="/home" class="nav-link active">Home</a>`
+    },
+    {
+      id: 'kw-html-2',
+      title: 'Accessible Search Input',
+      difficulty: 'Easy',
+      code: `<input type="text" placeholder="Search..." required />`
+    },
+    {
+      id: 'kw-html-3',
+      title: 'Responsive Image Element',
+      difficulty: 'Easy',
+      code: `<img src="hero.jpg" alt="Hero banner" loading="lazy" />`
+    }
+  ]
+};
+
+export const DEV_WORDS_SNIPPETS = [
+  {
+    id: 'dw-frontend',
+    title: 'Frontend & React Vocabulary',
+    difficulty: 'Easy',
+    code: `component useState useEffect render state dispatch payload reducer interface props handler onClick container stylesheet provider hook context router middleware virtual DOM hydration suspense callback memoization fragment bundle lifecycle`
+  },
+  {
+    id: 'dw-backend',
+    title: 'Backend & System Architecture',
+    difficulty: 'Easy',
+    code: `controller repository service database postgres schema migration endpoint gateway authentication payload session cookie token bearer serialization microservice pipeline docker kubernetes telemetry transaction queue worker`
+  },
+  {
+    id: 'dw-datastructures',
+    title: 'Data Structures & Algorithms',
+    difficulty: 'Intermediate',
+    code: `binarySearch quicksort linkedList priorityQueue hashmap iterator traverse recursion depthFirst breadthFirst matrix dynamicProgramming memoize backtrack adjacencyList stack heap buffer stream socket concurrency`
+  },
+  {
+    id: 'dw-patterns',
+    title: 'Design Patterns & Clean Code',
+    difficulty: 'Intermediate',
+    code: `singleton factory observer strategy adapter decorator prototype repository dependencyInjection immutability pureFunction sideEffect idempotency asynchronous synchronous exception handler pipeline throttle debounce validate`
+  },
+  {
+    id: 'dw-naming-cases',
+    title: 'Variable Naming Conventions',
+    difficulty: 'Advanced',
+    code: `getUserById isAuthenticated isFetchingData handleSubmit totalCount activeIndex maxRetries currentTimestamp configOptions parseJsonString nextProps prevState isDarkModeEnabled toggleSidebar`
+  }
+];
+
+export const SYMBOLS_SNIPPETS = [
+  {
+    id: 'sym-brackets',
+    title: 'Bracket Pair Fundamentals',
+    difficulty: 'Easy',
+    code: `( ) [ ] { } ( ) [ ] { } ( ) [ ] { } [ ] { } ( ) { } ( ) [ ]`
+  },
+  {
+    id: 'sym-arrows-logic',
+    title: 'Arrow Functions & Logical Operators',
+    difficulty: 'Easy',
+    code: `() => { return true; } && || ! == === !== != <= >= += -=`
+  },
+  {
+    id: 'sym-ternary-destructure',
+    title: 'Ternary & Object Destructuring',
+    difficulty: 'Intermediate',
+    code: `const { id, name } = item ? { ...item } : { id: 0, name: '' };`
+  },
+  {
+    id: 'sym-template-generics',
+    title: 'Generics & Angle Brackets',
+    difficulty: 'Intermediate',
+    code: `Map<string, List<number>> = new HashMap<>(); vector<pair<int, int>>`
+  },
+  {
+    id: 'sym-full-gauntlet',
+    title: 'Full Developer Symbol Gauntlet',
+    difficulty: 'Advanced',
+    code: `fn = (x, y) => [x ?? 0, y || 1]; (a >= b) ? { ok: !err } : null; #include <iostream>`
+  }
+];

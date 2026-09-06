@@ -7,7 +7,15 @@ import ResultsScreen from './components/ResultsScreen';
 import SettingsModal from './components/SettingsModal';
 import AboutModal from './components/AboutModal';
 
-import { SNIPPETS, LANGUAGES, DIFFICULTIES } from './data/snippets';
+import {
+  SNIPPETS,
+  LANGUAGES,
+  DIFFICULTIES,
+  CONTENT_CATEGORIES,
+  KEYWORDS_SNIPPETS,
+  DEV_WORDS_SNIPPETS,
+  SYMBOLS_SNIPPETS
+} from './data/snippets';
 import { KEYBOARD_THEMES, getThemeById } from './utils/themes';
 import { tokenizeCode } from './utils/tokenizer';
 import { playKeySound, playCompletionSound } from './utils/audio';
@@ -37,24 +45,66 @@ export default function App() {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [masterMode, setMasterMode] = useState(false);
 
+  const [category, setCategory] = useState(() => {
+    try {
+      return localStorage.getItem('devtype_category') || 'code';
+    } catch {
+      return 'code';
+    }
+  });
+  const [autoIndent, setAutoIndent] = useState(() => {
+    try {
+      const saved = localStorage.getItem('devtype_auto_indent');
+      return saved !== null ? saved === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
+  const [showWhitespace, setShowWhitespace] = useState(() => {
+    try {
+      const saved = localStorage.getItem('devtype_show_whitespace');
+      return saved !== null ? saved === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
+
   // Active theme object
   const activeTheme = useMemo(() => getThemeById(themeId), [themeId]);
 
-  // Snippets filtered by language and difficulty
+  // Snippets filtered by category, language, and difficulty
   const languageSnippets = useMemo(() => {
+    if (category === 'keywords') {
+      const allForLang = KEYWORDS_SNIPPETS[selectedLanguage] || KEYWORDS_SNIPPETS.javascript;
+      if (difficulty === 'All') return allForLang;
+      const filtered = allForLang.filter((s) => s.difficulty === difficulty);
+      return filtered.length > 0 ? filtered : allForLang;
+    }
+    if (category === 'words') {
+      if (difficulty === 'All') return DEV_WORDS_SNIPPETS;
+      const filtered = DEV_WORDS_SNIPPETS.filter((s) => s.difficulty === difficulty);
+      return filtered.length > 0 ? filtered : DEV_WORDS_SNIPPETS;
+    }
+    if (category === 'symbols') {
+      if (difficulty === 'All') return SYMBOLS_SNIPPETS;
+      const filtered = SYMBOLS_SNIPPETS.filter((s) => s.difficulty === difficulty);
+      return filtered.length > 0 ? filtered : SYMBOLS_SNIPPETS;
+    }
+    // Default 'code'
     const allForLang = SNIPPETS[selectedLanguage] || SNIPPETS.javascript;
     if (difficulty === 'All') return allForLang;
     const filtered = allForLang.filter((s) => s.difficulty === difficulty);
     return filtered.length > 0 ? filtered : allForLang;
-  }, [selectedLanguage, difficulty]);
+  }, [category, selectedLanguage, difficulty]);
 
   const currentSnippet = useMemo(() => {
     return languageSnippets[snippetIndex % languageSnippets.length] || languageSnippets[0];
   }, [languageSnippets, snippetIndex]);
 
   const tokens = useMemo(() => {
-    return tokenizeCode(currentSnippet.code, selectedLanguage);
-  }, [currentSnippet, selectedLanguage]);
+    const lang = (category === 'words' || category === 'symbols') ? 'javascript' : selectedLanguage;
+    return tokenizeCode(currentSnippet.code, lang);
+  }, [currentSnippet, selectedLanguage, category]);
 
   // Test Runtime State
   const [status, setStatus] = useState('idle'); // 'idle' | 'running' | 'paused' | 'completed'
@@ -99,6 +149,9 @@ export default function App() {
     timeRemaining,
     elapsedSeconds,
     selectedLanguage,
+    category,
+    autoIndent,
+    showWhitespace,
     timeline,
     isFocused
   };
@@ -195,6 +248,38 @@ export default function App() {
     setTimeRemaining(dur);
     handleRestart();
   }, [handleRestart]);
+
+  // Switch category
+  const handleSelectCategory = useCallback((catId) => {
+    setCategory(catId);
+    try {
+      localStorage.setItem('devtype_category', catId);
+    } catch {}
+    setSnippetIndex(0);
+    handleRestart();
+  }, [handleRestart]);
+
+  // Toggle auto-indent
+  const handleToggleAutoIndent = useCallback(() => {
+    setAutoIndent((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('devtype_auto_indent', String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  // Toggle whitespace dots
+  const handleToggleWhitespace = useCallback(() => {
+    setShowWhitespace((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('devtype_show_whitespace', String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
 
   // Pause / Resume toggle
   const handleTogglePause = useCallback(() => {
@@ -361,13 +446,33 @@ export default function App() {
       const targetCode = s.currentSnippet.code;
       const targetChar = targetCode[s.currentIndex];
 
-      // Handle Backspace
+      // Handle Backspace with Smart Indent support
       if (key === 'Backspace') {
         e.preventDefault();
         if (s.currentIndex > 0) {
           playKeySound(s.soundType, s.soundVolume, false);
-          setCurrentIndex((prev) => prev - 1);
-          setTypedChars((prev) => prev.slice(0, -1));
+
+          let charsToRemove = 1;
+          if (s.autoIndent) {
+            let lastNewlineIdx = -1;
+            for (let j = s.currentIndex - 1; j >= 0; j--) {
+              if (targetCode[j] === '\n') {
+                lastNewlineIdx = j;
+                break;
+              }
+              if (targetCode[j] !== ' ') {
+                break;
+              }
+            }
+            if (lastNewlineIdx !== -1) {
+              // All characters between lastNewlineIdx and currentIndex were spaces
+              charsToRemove = s.currentIndex - lastNewlineIdx;
+            }
+          }
+
+          const newIdx = Math.max(0, s.currentIndex - charsToRemove);
+          setCurrentIndex(newIdx);
+          setTypedChars((prev) => prev.slice(0, newIdx));
         }
         return;
       }
@@ -387,18 +492,62 @@ export default function App() {
         e.preventDefault();
       }
 
+      // Smart Tab Key handling
+      if (key === 'Tab') {
+        if (targetChar === ' ') {
+          let spaceCount = 0;
+          while (s.currentIndex + spaceCount < targetCode.length && targetCode[s.currentIndex + spaceCount] === ' ') {
+            spaceCount++;
+          }
+          const numToAdvance = Math.min(spaceCount, 2);
+          if (numToAdvance > 0) {
+            playKeySound(s.soundType, s.soundVolume, false, true);
+            setCorrectCount((prev) => prev + numToAdvance);
+            const spaces = Array(numToAdvance).fill(' ');
+            setTypedChars((prev) => [...prev, ...spaces]);
+            const nextIdx = s.currentIndex + numToAdvance;
+            setCurrentIndex(nextIdx);
+
+            if (s.mode === 'snippet' && nextIdx >= targetCode.length) {
+              const curSegment = s.segmentStartTime ? Date.now() - s.segmentStartTime : 0;
+              const totalSecs = Math.max(1, Math.round((s.accumulatedMs + curSegment) / 1000));
+              completeTest(totalSecs);
+            }
+          }
+        }
+        return;
+      }
+
       // Map keys to code characters
       let inputChar = key;
       if (key === 'Enter') inputChar = '\n';
-      if (key === 'Tab') inputChar = '  '; // 2 spaces standard for code
 
       // Character evaluation
       if (inputChar === targetChar) {
         // Correct character typed
         playKeySound(s.soundType, s.soundVolume, false, inputChar === ' ');
-        setCorrectCount((prev) => prev + 1);
-        setTypedChars((prev) => [...prev, inputChar]);
-        const nextIdx = s.currentIndex + 1;
+
+        let charsToAdd = [inputChar];
+        let correctIncrement = 1;
+        let nextIdx = s.currentIndex + 1;
+
+        // Smart Auto-Indent on Enter
+        if (inputChar === '\n' && s.autoIndent) {
+          let indentCount = 0;
+          while (nextIdx + indentCount < targetCode.length && targetCode[nextIdx + indentCount] === ' ') {
+            indentCount++;
+          }
+          if (indentCount > 0) {
+            for (let k = 0; k < indentCount; k++) {
+              charsToAdd.push(' ');
+            }
+            correctIncrement += indentCount;
+            nextIdx += indentCount;
+          }
+        }
+
+        setCorrectCount((prev) => prev + correctIncrement);
+        setTypedChars((prev) => [...prev, ...charsToAdd]);
         setCurrentIndex(nextIdx);
 
         // Correct key visual feedback on keyboard
@@ -494,6 +643,8 @@ export default function App() {
           <div className="typing-view animate-fade-in">
             {/* Minimal Config Bar */}
             <ConfigBar
+              category={category}
+              onSelectCategory={handleSelectCategory}
               selectedLanguage={selectedLanguage}
               onSelectLanguage={handleSelectLanguage}
               difficulty={difficulty}
@@ -502,6 +653,8 @@ export default function App() {
               onSelectMode={handleSelectMode}
               duration={duration}
               onSelectDuration={handleSelectDuration}
+              autoIndent={autoIndent}
+              onToggleAutoIndent={handleToggleAutoIndent}
               disabled={status === 'running'}
             />
 
@@ -516,6 +669,8 @@ export default function App() {
               mode={mode}
               status={status}
               caretStyle={caretStyle}
+              showWhitespace={showWhitespace}
+              autoIndent={autoIndent}
               onRestart={handleRestart}
               onTogglePause={handleTogglePause}
               isFocused={isFocused}
@@ -596,6 +751,10 @@ export default function App() {
         onToggleKeyHints={() => setShowKeyHints((prev) => !prev)}
         masterMode={masterMode}
         onToggleMasterMode={() => setMasterMode((prev) => !prev)}
+        autoIndent={autoIndent}
+        onToggleAutoIndent={handleToggleAutoIndent}
+        showWhitespace={showWhitespace}
+        onToggleWhitespace={handleToggleWhitespace}
         colorMode={colorMode}
         onToggleColorMode={handleToggleColorMode}
       />

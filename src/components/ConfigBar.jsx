@@ -1,5 +1,6 @@
 import React from 'react';
-import { LANGUAGES, DIFFICULTIES } from '../data/snippets';
+import { Zap } from 'lucide-react';
+import { LANGUAGES, DIFFICULTIES, CONTENT_CATEGORIES } from '../data/snippets';
 
 export const MODES = [
   { id: 'time', label: 'Time' },
@@ -9,6 +10,8 @@ export const MODES = [
 export const DURATIONS = [15, 30, 60, 120];
 
 export default function ConfigBar({
+  category = 'code',
+  onSelectCategory,
   selectedLanguage,
   onSelectLanguage,
   difficulty,
@@ -17,25 +20,50 @@ export default function ConfigBar({
   onSelectMode,
   duration,
   onSelectDuration,
+  autoIndent = true,
+  onToggleAutoIndent,
   disabled = false
 }) {
+  const showLanguages = category === 'code' || category === 'keywords';
+
   return (
     <div className="config-bar-wrapper">
       <div className="config-bar-container">
-        {/* Language Selection */}
-        <div className="config-group">
-          {LANGUAGES.map((lang) => (
+        {/* Practice Category Selection */}
+        <div className="config-group category-group">
+          {CONTENT_CATEGORIES.map((cat) => (
             <button
-              key={lang.id}
+              key={cat.id}
               type="button"
-              className={`config-option-btn ${selectedLanguage === lang.id ? 'is-active' : ''}`}
-              onClick={() => onSelectLanguage(lang.id)}
+              className={`config-option-btn category-pill ${category === cat.id ? 'is-active' : ''}`}
+              onClick={() => onSelectCategory && onSelectCategory(cat.id)}
               disabled={disabled}
+              title={cat.desc}
             >
-              {lang.name}
+              {cat.name}
             </button>
           ))}
         </div>
+
+        {/* Language Selection (shown for Code and Keywords) */}
+        {showLanguages && (
+          <>
+            <div className="config-divider" />
+            <div className="config-group">
+              {LANGUAGES.map((lang) => (
+                <button
+                  key={lang.id}
+                  type="button"
+                  className={`config-option-btn ${selectedLanguage === lang.id ? 'is-active' : ''}`}
+                  onClick={() => onSelectLanguage(lang.id)}
+                  disabled={disabled}
+                >
+                  {lang.name}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         <div className="config-divider" />
 
@@ -90,7 +118,24 @@ export default function ConfigBar({
             </div>
           </>
         )}
+
+        {/* Auto-Indent Quick Toggle */}
+        <div className="config-divider" />
+        <div className="config-group">
+          <button
+            type="button"
+            className={`config-option-btn auto-indent-toggle-btn ${autoIndent ? 'is-active is-indent-on' : ''}`}
+            onClick={onToggleAutoIndent}
+            disabled={disabled}
+            title={autoIndent ? 'Auto-Indent is ON: Enter key automatically advances past indentation spaces' : 'Auto-Indent is OFF: Manual spaces required'}
+            aria-label="Toggle Auto-Indent"
+          >
+            <Zap size={13} className="indent-zap-icon" />
+            <span>Auto-Indent</span>
+          </button>
+        </div>
       </div>
     </div>
   );
 }
+

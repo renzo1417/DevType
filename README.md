@@ -6,7 +6,14 @@
 
 ## ⚡ Features
 
-- **Authentic Code Syntax**: Practice real-world coding snippets across **JavaScript**, **Python**, **C++**, **Java**, and **HTML** with tokenized syntax highlighting.
+- **4 Practice Categories**:
+  - **Full Code**: Multi-line coding snippets across **JavaScript**, **Python**, **C++**, **Java**, and **HTML** with beginner-friendly & advanced tiers.
+  - **Keywords & Flow**: Clean, fast 1–2 line syntax expressions & core keywords with minimal symbols.
+  - **Developer Words**: High-frequency developer vocabulary in camelCase/PascalCase (no symbols, pure typing rhythm).
+  - **Symbols Drill**: Dedicated bracket, arrow, and operator practice (`() => {}`, `[]`, `&& ||`, `<>`).
+- **Smart Auto-Indent Engine**: Pressing `Enter` automatically advances past leading line indentation spaces so you land directly on the first code token (with 1-click toggle on the config bar).
+- **Smart `Tab` Key**: Pressing `Tab` cleanly consumes 2 spaces of indentation without error penalties.
+- **Visual Whitespace Clarity**: Untyped spaces display faint dots (`·`) and return cues (`↵`) so code structure is instantly readable.
 - **Tactile 60% Virtual Keyboard**: Interactive mechanical keyboard layout with live key tracking, dynamic active key glows, and visual target key hints.
 - **Physical Switch Audio Synthesizer**: 8 synthesized mechanical switch sound profiles powered by the Web Audio API:
   - *Cream Thock (Deep)*
@@ -24,7 +31,7 @@
   - *Time Mode* (15s, 30s, 60s, 120s)
   - *Snippet Mode* (Complete snippet)
   - *Master Mode* (Hardcore instant restart on error)
-  - *Caret Styles* (Line, Block, Underline, Pulse Glow)
+  - *Caret Styles* (Line, Block, Underline)
 
 ---
 
@@ -32,7 +39,10 @@
 
 | Shortcut | Description |
 | :--- | :--- |
-| `Tab` + `Enter` or `Esc` | Instant Test Restart |
+| `Esc` | Instant Test Restart |
+| `Enter` | New line (with Auto-Indent, jumps to first code token) |
+| `Tab` | Smart Indent (advances 2 spaces) |
+| `Backspace` | Deletes char (or entire auto-indentation if at line start) |
 | `Ctrl` + `Enter` | Next Code Snippet |
 | `Click outside` | Pause & Blur Focus |
 

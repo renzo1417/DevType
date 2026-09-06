@@ -30,6 +30,10 @@ export default function SettingsModal({
   onToggleKeyHints,
   masterMode,
   onToggleMasterMode,
+  autoIndent = true,
+  onToggleAutoIndent,
+  showWhitespace = true,
+  onToggleWhitespace,
   colorMode = 'dark',
   onToggleColorMode
 }) {
@@ -222,6 +226,22 @@ export default function SettingsModal({
                   </div>
 
                   <div className="pref-toggle-list">
+                    <div className="pref-toggle-item" onClick={onToggleAutoIndent}>
+                      <div>
+                        <div className="toggle-label">Smart Auto-Indent</div>
+                        <div className="toggle-desc">Enter key automatically skips leading indentation spaces</div>
+                      </div>
+                      <div className={`switch-pill ${autoIndent ? 'is-on' : ''}`} />
+                    </div>
+
+                    <div className="pref-toggle-item" onClick={onToggleWhitespace}>
+                      <div>
+                        <div className="toggle-label">Show Whitespace Dots</div>
+                        <div className="toggle-desc">Display subtle dots for untyped spaces to make indentation obvious</div>
+                      </div>
+                      <div className={`switch-pill ${showWhitespace ? 'is-on' : ''}`} />
+                    </div>
+
                     <div className="pref-toggle-item" onClick={onToggleKeyHints}>
                       <div>
                         <div className="toggle-label">Keycap Target Hints</div>
@@ -268,8 +288,16 @@ export default function SettingsModal({
                       <span className="shortcut-desc">Next Code Snippet</span>
                     </div>
                     <div className="shortcut-row">
+                      <span className="shortcut-keys"><kbd>Enter</kbd></span>
+                      <span className="shortcut-desc">New line (with Auto-Indent jumps to code token)</span>
+                    </div>
+                    <div className="shortcut-row">
                       <span className="shortcut-keys"><kbd>Tab</kbd></span>
-                      <span className="shortcut-desc">Indents 2 spaces</span>
+                      <span className="shortcut-desc">Smart Indent (advances 2 spaces)</span>
+                    </div>
+                    <div className="shortcut-row">
+                      <span className="shortcut-keys"><kbd>Backspace</kbd></span>
+                      <span className="shortcut-desc">Removes char (or whole indentation after Enter)</span>
                     </div>
                     <div className="shortcut-row">
                       <span className="shortcut-keys"><kbd>Click outside</kbd></span>

@@ -299,6 +299,40 @@ html, body {
   margin: 0 0.2rem;
 }
 
+/* Category Pills & Auto-Indent Button */
+.category-pill {
+  letter-spacing: 0.01em;
+  font-weight: 500;
+}
+
+.category-pill.is-active {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px var(--accent-glow);
+}
+
+.auto-indent-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid transparent;
+}
+
+.auto-indent-toggle-btn.is-indent-on {
+  color: var(--accent) !important;
+  background: var(--accent-muted);
+  border-color: rgba(234, 88, 12, 0.2);
+}
+
+.auto-indent-toggle-btn .indent-zap-icon {
+  transition: transform 0.2s ease;
+  color: var(--accent);
+}
+
+.auto-indent-toggle-btn:hover .indent-zap-icon {
+  transform: scale(1.2);
+}
+
 /* ==========================================================================
    Typing View & Telemetry Bar
    ========================================================================== */
@@ -547,6 +581,45 @@ html, body {
 @keyframes blink-caret {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
+}
+
+/* Whitespace Dots & Indent Visualizers */
+.char-space {
+  display: inline-block;
+  min-width: 0.58em;
+  text-align: center;
+}
+
+.space-dot {
+  display: inline-block;
+  opacity: 0.25;
+  font-size: 1.15em;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  transform: translateY(-0.06em);
+}
+
+.current-char .space-dot {
+  opacity: 0.7;
+}
+
+.char-indent-space {
+  opacity: 0.3;
+}
+
+.newline-cue {
+  display: inline-block;
+  font-size: 0.85em;
+  opacity: 0.7;
+  color: var(--accent);
+  margin-right: 0.15em;
+  animation: pulse-cue 1s infinite alternate;
+}
+
+@keyframes pulse-cue {
+  from { opacity: 0.4; transform: translateX(0); }
+  to { opacity: 0.95; transform: translateX(2px); }
 }
 
 /* ==========================================================================
