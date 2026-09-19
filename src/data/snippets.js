@@ -66,6 +66,36 @@ export const SNIPPETS = {
 }`
     },
     {
+      id: 'js-frequency-map',
+      title: 'Array Frequency Counter',
+      difficulty: 'Easy',
+      code: `function countFrequencies(items) {
+  const map = new Map();
+  for (const item of items) {
+    map.set(item, (map.get(item) || 0) + 1);
+  }
+  return map;
+}`
+    },
+    {
+      id: 'js-deep-clone',
+      title: 'Deep Object Clone',
+      difficulty: 'Easy',
+      code: `function deepClone(obj) {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(item => deepClone(item));
+  }
+  const copy = {};
+  for (const key of Object.keys(obj)) {
+    copy[key] = deepClone(obj[key]);
+  }
+  return copy;
+}`
+    },
+    {
       id: 'js-debounce',
       title: 'Debounce Function Handler',
       difficulty: 'Easy',
@@ -100,6 +130,23 @@ export const SNIPPETS = {
 }`
     },
     {
+      id: 'js-throttle',
+      title: 'Throttle Rate Limiter',
+      difficulty: 'Intermediate',
+      code: `function throttle(callback, limit = 200) {
+  let inThrottle = false;
+  return function (...args) {
+    if (!inThrottle) {
+      callback.apply(this, args);
+      inThrottle = true;
+      setTimeout(() => {
+        inThrottle = false;
+      }, limit);
+    }
+  };
+}`
+    },
+    {
       id: 'js-event-emitter',
       title: 'Lightweight Event Emitter',
       difficulty: 'Intermediate',
@@ -123,38 +170,32 @@ export const SNIPPETS = {
 
   emit(event, ...args) {
     const handlers = this.events.get(event);
-    if (handlers) handlers.forEach(fn => fn(...args));
+    if (handlers) {
+      for (const fn of handlers) fn(...args);
+    }
+  }
+}`
+    },
+    {
+      id: 'js-promise-retry',
+      title: 'Promise Retry with Exponential Backoff',
+      difficulty: 'Intermediate',
+      code: `async function retryOperation(fn, maxRetries = 3, delay = 500) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (attempt === maxRetries) throw err;
+      const backoff = delay * Math.pow(2, attempt - 1);
+      await new Promise(resolve => setTimeout(resolve, backoff));
+    }
   }
 }`
     },
     // Advanced
     {
-      id: 'js-reactive-state',
-      title: 'Observable State Store Proxy',
-      difficulty: 'Advanced',
-      code: `function createStore(initialState) {
-  const subscribers = new Set();
-  const state = new Proxy(initialState, {
-    set(target, prop, value) {
-      if (target[prop] === value) return true;
-      target[prop] = value;
-      subscribers.forEach(listener => listener(target));
-      return true;
-    }
-  });
-
-  return {
-    state,
-    subscribe(listener) {
-      subscribers.add(listener);
-      return () => subscribers.delete(listener);
-    }
-  };
-}`
-    },
-    {
       id: 'js-lru-cache',
-      title: 'LRU Cache with Map Iterators',
+      title: 'LRU Cache Implementation',
       difficulty: 'Advanced',
       code: `class LRUCache {
   constructor(capacity) {
@@ -164,21 +205,43 @@ export const SNIPPETS = {
 
   get(key) {
     if (!this.cache.has(key)) return -1;
-    const value = this.cache.get(key);
+    const val = this.cache.get(key);
     this.cache.delete(key);
-    this.cache.set(key, value);
-    return value;
+    this.cache.set(key, val);
+    return val;
   }
 
-  put(key, value) {
+  put(key, val) {
     if (this.cache.has(key)) {
       this.cache.delete(key);
     } else if (this.cache.size >= this.capacity) {
       const oldestKey = this.cache.keys().next().value;
       this.cache.delete(oldestKey);
     }
-    this.cache.set(key, value);
+    this.cache.set(key, val);
   }
+}`
+    },
+    {
+      id: 'js-reactive-store',
+      title: 'Reactive State Store with Subscriptions',
+      difficulty: 'Advanced',
+      code: `function createStore(initialState = {}) {
+  let state = { ...initialState };
+  const listeners = new Set();
+
+  return {
+    getState: () => state,
+    setState: (update) => {
+      const nextState = typeof update === 'function' ? update(state) : update;
+      state = { ...state, ...nextState };
+      listeners.forEach(fn => fn(state));
+    },
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    }
+  };
 }`
     }
   ],
@@ -186,17 +249,10 @@ export const SNIPPETS = {
   python: [
     // Easy (Beginner Friendly)
     {
-      id: 'py-square',
-      title: 'Square Number',
+      id: 'py-abs-function',
+      title: 'Absolute Value & Sign Check',
       difficulty: 'Easy',
-      code: `def square(n: int) -> int:
-    return n * n`
-    },
-    {
-      id: 'py-is-positive',
-      title: 'Positive Check',
-      difficulty: 'Easy',
-      code: `def is_positive(x: float) -> bool:
+      code: `def is_positive(x: int) -> bool:
     return x > 0`
     },
     {
@@ -212,6 +268,18 @@ def is_anagram(str1: str, str2: str) -> bool:
     return Counter(str1.lower()) == Counter(str2.lower())`
     },
     {
+      id: 'py-fibonacci-memo',
+      title: 'Memoized Fibonacci Generator',
+      difficulty: 'Easy',
+      code: `from functools import lru_cache
+
+@lru_cache(maxsize=128)
+def fibonacci(n: int) -> int:
+    if n < 2:
+        return n
+    return fibonacci(n - 1) + fibonacci(n - 2)`
+    },
+    {
       id: 'py-flatten-list',
       title: 'Nested List Flatten Generator',
       difficulty: 'Easy',
@@ -223,6 +291,16 @@ def flatten(items: list[Any]) -> Iterator[Any]:
             yield from flatten(item)
         else:
             yield item`
+    },
+    {
+      id: 'py-filter-keys',
+      title: 'Dictionary Key Filter Helper',
+      difficulty: 'Easy',
+      code: `def filter_dict_keys(data: dict, allowed_keys: set) -> dict:
+    return {
+        key: val for key, val in data.items()
+        if key in allowed_keys and val is not None
+    }`
     },
     // Intermediate
     {
@@ -260,6 +338,24 @@ def db_transaction(connection):
         raise error
     finally:
         cursor.close()`
+    },
+    {
+      id: 'py-chunk-iterable',
+      title: 'Batch Iterator Generator',
+      difficulty: 'Intermediate',
+      code: `from typing import Iterable, Iterator, List, TypeVar
+
+T = TypeVar('T')
+
+def batch_items(iterable: Iterable[T], batch_size: int = 50) -> Iterator[List[T]]:
+    batch = []
+    for item in iterable:
+        batch.append(item)
+        if len(batch) == batch_size:
+            yield batch
+            batch = []
+    if batch:
+        yield batch`
     },
     // Advanced
     {
@@ -310,6 +406,22 @@ class PriorityQueue(Generic[T]):
         if not self._queue:
             raise IndexError("pop from empty priority queue")
         return heapq.heappop(self._queue)[-1]`
+    },
+    {
+      id: 'py-async-pool',
+      title: 'Asyncio Semaphore Worker Pool',
+      difficulty: 'Advanced',
+      code: `import asyncio
+from typing import Callable, Coroutine, List, Any
+
+async def run_with_concurrency_limit(tasks: List[Callable[[], Coroutine]], limit: int = 5) -> List[Any]:
+    semaphore = asyncio.Semaphore(limit)
+
+    async def worker(task_fn: Callable[[], Coroutine]) -> Any:
+        async with semaphore:
+            return await task_fn()
+
+    return await asyncio.gather(*(worker(t) for t in tasks))`
     }
   ],
 
@@ -343,6 +455,22 @@ constexpr const T& clampValue(const T& val, const T& low, const T& high) {
     if (val < low) return low;
     if (high < val) return high;
     return val;
+}`
+    },
+    {
+      id: 'cpp-vector-reverse',
+      title: 'In-Place Vector Reversal',
+      difficulty: 'Easy',
+      code: `#include <vector>
+#include <utility>
+
+template <typename T>
+void reverseVector(std::vector<T>& vec) {
+    int i = 0;
+    int j = static_cast<int>(vec.size()) - 1;
+    while (i < j) {
+        std::swap(vec[i++], vec[j--]);
+    }
 }`
     },
     {
@@ -410,6 +538,18 @@ public:
     }
 };`
     },
+    {
+      id: 'cpp-smart-factory',
+      title: 'Unique Pointer Factory Wrapper',
+      difficulty: 'Intermediate',
+      code: `#include <memory>
+#include <utility>
+
+template <typename T, typename... Args>
+std::unique_ptr<T> makeUniqueSafely(Args&&... args) {
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}`
+    },
     // Advanced
     {
       id: 'cpp-object-pool',
@@ -436,6 +576,38 @@ public:
         auto item = std::move(pool.back());
         pool.pop_back();
         return item;
+    }
+};`
+    },
+    {
+      id: 'cpp-ring-buffer',
+      title: 'Fixed Circular Ring Buffer',
+      difficulty: 'Advanced',
+      code: `#include <array>
+#include <cstddef>
+#include <optional>
+
+template <typename T, size_t Cap>
+class CircularBuffer {
+private:
+    std::array<T, Cap> buffer;
+    size_t head = 0;
+    size_t tail = 0;
+    bool isFull = false;
+public:
+    void push(T item) {
+        buffer[head] = item;
+        if (isFull) tail = (tail + 1) % Cap;
+        head = (head + 1) % Cap;
+        isFull = (head == tail);
+    }
+
+    std::optional<T> pop() {
+        if (!isFull && head == tail) return std::nullopt;
+        T val = buffer[tail];
+        isFull = false;
+        tail = (tail + 1) % Cap;
+        return val;
     }
 };`
     }
@@ -488,6 +660,20 @@ public class ConfigLoader {
     }
 }`
     },
+    {
+      id: 'java-list-dedup',
+      title: 'Distinct Ordered List Collector',
+      difficulty: 'Easy',
+      code: `import java.util.List;
+import java.util.LinkedHashSet;
+
+public class ListUtils {
+    public static <T> List<T> removeDuplicates(List<T> items) {
+        if (items == null) return List.of();
+        return List.copyOf(new LinkedHashSet<>(items));
+    }
+}`
+    },
     // Intermediate
     {
       id: 'java-stream-grouping',
@@ -532,6 +718,27 @@ public class SalesAnalytics {
     }
 }`
     },
+    {
+      id: 'java-lru-cache-map',
+      title: 'LinkedHashMap LRU Eviction Cache',
+      difficulty: 'Intermediate',
+      code: `import java.util.LinkedHashMap;
+import java.util.Map;
+
+public class BoundedCache<K, V> extends LinkedHashMap<K, V> {
+    private final int maxEntries;
+
+    public BoundedCache(int maxEntries) {
+        super(maxEntries, 0.75f, true);
+        this.maxEntries = maxEntries;
+    }
+
+    @Override
+    protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+        return size() > maxEntries;
+    }
+}`
+    },
     // Advanced
     {
       id: 'java-dijkstra',
@@ -557,6 +764,22 @@ public class SalesAnalytics {
         }
     }
     return dist;
+}`
+    },
+    {
+      id: 'java-async-pipeline',
+      title: 'CompletableFuture Async Pipeline',
+      difficulty: 'Advanced',
+      code: `import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+
+public class OrderService {
+    public CompletableFuture<Receipt> processOrderAsync(Order order, Executor pool) {
+        return CompletableFuture.supplyAsync(() -> validateOrder(order), pool)
+            .thenCompose(validOrder -> chargePaymentAsync(validOrder, pool))
+            .thenApply(payment -> generateReceipt(order, payment))
+            .exceptionally(ex -> fallbackReceipt(order, ex));
+    }
 }`
     }
   ],
@@ -649,6 +872,23 @@ public class SalesAnalytics {
   </div>
 </article>`
     },
+    {
+      id: 'html-pricing-tier',
+      title: 'Feature Pricing Comparison Card',
+      difficulty: 'Intermediate',
+      code: `<section class="pricing-plan featured">
+  <div class="plan-header">
+    <span class="plan-pill">Pro Developer</span>
+    <h3 class="plan-price font-mono">$12<span class="period">/mo</span></h3>
+  </div>
+  <ul class="plan-features">
+    <li>Unlimited Syntax Typing Drills</li>
+    <li>Custom Mechanical Audio Packs</li>
+    <li>Detailed Speed & WPM Analytics</li>
+  </ul>
+  <button type="button" class="btn btn-primary full-width">Upgrade Plan</button>
+</section>`
+    },
     // Advanced
     {
       id: 'html-modal-dialog',
@@ -663,8 +903,8 @@ public class SalesAnalytics {
     <section class="dialog-body">
       <fieldset class="field-group">
         <legend>Sound Profile</legend>
-        <label><input type="radio" name="sound" value="thock" checked /> Cream Thock</label>
-        <label><input type="radio" name="sound" value="clicky" /> Blue Click</label>
+        <label><input type="radio" name="sound" value="creamy" checked /> NovelKeys Cream</label>
+        <label><input type="radio" name="sound" value="clacky" /> Alu Plate Clack</label>
       </fieldset>
     </section>
     <footer class="dialog-footer">
@@ -713,6 +953,18 @@ export const KEYWORDS_SNIPPETS = {
       title: 'For Of Loop Traversal',
       difficulty: 'Intermediate',
       code: `for (const item of items) { process(item); }`
+    },
+    {
+      id: 'kw-js-7',
+      title: 'Nullish Coalescing Operator',
+      difficulty: 'Easy',
+      code: `const port = process.env.PORT ?? 3000;`
+    },
+    {
+      id: 'kw-js-8',
+      title: 'Optional Chaining Access',
+      difficulty: 'Easy',
+      code: `const email = user?.profile?.contact?.email;`
     }
   ],
   python: [
@@ -886,3 +1138,15 @@ export const SYMBOLS_SNIPPETS = [
     code: `fn = (x, y) => [x ?? 0, y || 1]; (a >= b) ? { ok: !err } : null; #include <iostream>`
   }
 ];
+
+/**
+ * Get a random index from a list, avoiding the currentIndex if multiple items exist
+ */
+export function getRandomSnippetIndex(list, currentIndex = -1) {
+  if (!list || list.length <= 1) return 0;
+  let nextIdx;
+  do {
+    nextIdx = Math.floor(Math.random() * list.length);
+  } while (nextIdx === currentIndex && list.length > 1);
+  return nextIdx;
+}

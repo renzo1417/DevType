@@ -1120,19 +1120,27 @@ html, body {
 .sound-profile-btn {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
-  padding: 0.6rem 0.85rem;
+  padding: 0.65rem 0.85rem;
   border-radius: 8px;
   color: var(--text-secondary);
   font-size: 0.84rem;
   font-weight: 500;
   cursor: pointer;
   text-align: left;
-  transition: all 0.15s ease;
+  transition: transform 0.1s ease, border-color 0.15s ease, background-color 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .sound-profile-btn:hover {
   background: var(--bg-card-hover);
+  border-color: var(--border-medium);
   color: var(--text-primary);
+}
+
+.sound-profile-btn:active {
+  transform: scale(0.97);
 }
 
 .sound-profile-btn.is-active {
@@ -1140,6 +1148,82 @@ html, body {
   border-color: var(--accent);
   color: var(--accent);
   font-weight: 600;
+}
+
+.sound-profile-btn-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.profile-badge {
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  padding: 0.12rem 0.4rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+.sound-profile-btn.is-active .profile-badge {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Shuffle / Next Snippet Button */
+.shuffle-snippet-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 0.35rem 0.65rem;
+  transition: transform 0.1s ease, border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+}
+
+.shuffle-snippet-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-muted);
+}
+
+.shuffle-snippet-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.shuffle-icon {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.shuffle-snippet-btn:hover .shuffle-icon {
+  transform: rotate(90deg);
+}
+
+/* Snippet Title & Progress In Telemetry */
+.snippet-title-item {
+  max-width: 220px;
+}
+
+.snippet-title-text {
+  font-size: 0.82rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  max-width: 180px;
+}
+
+@media (max-width: 768px) {
+  .hide-on-mobile {
+    display: none !important;
+  }
 }
 
 .pref-row {

@@ -10,7 +10,7 @@ import {
   Moon,
   Command
 } from 'lucide-react';
-import { SWITCH_SOUNDS } from '../utils/audio';
+import { SWITCH_SOUNDS, playKeySound } from '../utils/audio';
 import { KEYBOARD_THEMES } from '../utils/themes';
 
 export default function SettingsModal({
@@ -117,9 +117,16 @@ export default function SettingsModal({
                         key={s.id}
                         type="button"
                         className={`sound-profile-btn ${soundType === s.id ? 'is-active' : ''}`}
-                        onClick={() => onSoundTypeChange(s.id)}
+                        onClick={() => {
+                          onSoundTypeChange(s.id);
+                          playKeySound(s.id, soundVolume);
+                        }}
+                        title={s.desc || s.name}
                       >
-                        <span className="profile-name">{s.name}</span>
+                        <div className="sound-profile-btn-content">
+                          <span className="profile-name">{s.name}</span>
+                          {s.category && <span className="profile-badge">{s.category}</span>}
+                        </div>
                       </button>
                     ))}
                   </div>

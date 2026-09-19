@@ -44,17 +44,20 @@ export default function ResultsScreen({
     }
   }, [stats]);
 
-  // Keyboard shortcut listener for Enter / Esc to restart
+  // Keyboard shortcut listener: Enter = Next Snippet, Esc = Retry Same Code
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' || (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey)) {
+      if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey) {
+        e.preventDefault();
+        onNextSnippet ? onNextSnippet() : onRestart();
+      } else if (e.key === 'Escape') {
         e.preventDefault();
         onRestart();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onRestart]);
+  }, [onNextSnippet, onRestart]);
 
   const handleCopyResult = () => {
     const text = `⚡ DevType v2.0 Result\n` +
@@ -139,26 +142,26 @@ export default function ResultsScreen({
         </div>
       )}
 
-      {/* Minimal Action Buttons */}
+      {/* Action Buttons */}
       <div className="results-actions">
         <button
           type="button"
           className="result-action-btn primary"
-          onClick={onRestart}
-          title="Restart Test (Esc)"
+          onClick={onNextSnippet}
+          title="Next Code Snippet (Enter)"
         >
-          <RotateCcw size={15} />
-          <span>Restart <kbd className="btn-kbd">Esc</kbd></span>
+          <ArrowRight size={15} />
+          <span>Next Code <kbd className="btn-kbd">Enter</kbd></span>
         </button>
 
         <button
           type="button"
           className="result-action-btn"
-          onClick={onNextSnippet}
-          title="Next Snippet"
+          onClick={onRestart}
+          title="Retry Same Snippet (Esc)"
         >
-          <ArrowRight size={15} />
-          <span>Next Snippet</span>
+          <RotateCcw size={15} />
+          <span>Retry <kbd className="btn-kbd">Esc</kbd></span>
         </button>
 
         <button

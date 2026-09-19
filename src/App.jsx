@@ -14,7 +14,8 @@ import {
   CONTENT_CATEGORIES,
   KEYWORDS_SNIPPETS,
   DEV_WORDS_SNIPPETS,
-  SYMBOLS_SNIPPETS
+  SYMBOLS_SNIPPETS,
+  getRandomSnippetIndex
 } from './data/snippets';
 import { KEYBOARD_THEMES, getThemeById } from './utils/themes';
 import { tokenizeCode } from './utils/tokenizer';
@@ -24,7 +25,6 @@ export default function App() {
   // Configuration State
   const [selectedLanguage, setSelectedLanguage] = useState('javascript');
   const [difficulty, setDifficulty] = useState('All');
-  const [snippetIndex, setSnippetIndex] = useState(0);
   const [mode, setMode] = useState('time'); // 'time' | 'snippet'
   const [duration, setDuration] = useState(60); // 15, 30, 60, 120
   const [themeId, setThemeId] = useState('orange');
@@ -38,7 +38,7 @@ export default function App() {
   const [showKeyboard, setShowKeyboard] = useState(true);
   const [showKeyHints, setShowKeyHints] = useState(true);
   const [caretStyle, setCaretStyle] = useState('line');
-  const [soundType, setSoundType] = useState('thock');
+  const [soundType, setSoundType] = useState('creamy'); // Default to authentic Mechvibes creamy sound
   const [soundVolume, setSoundVolume] = useState(0.75);
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -96,6 +96,20 @@ export default function App() {
     const filtered = allForLang.filter((s) => s.difficulty === difficulty);
     return filtered.length > 0 ? filtered : allForLang;
   }, [category, selectedLanguage, difficulty]);
+
+  // Initialize snippetIndex randomly so page refresh gives a new code
+  const [snippetIndex, setSnippetIndex] = useState(() => {
+    try {
+      const stored = sessionStorage.getItem('devtype_last_snippet_idx');
+      const prevIdx = stored !== null ? parseInt(stored, 10) : -1;
+      const initialPool = SNIPPETS.javascript;
+      const nextIdx = getRandomSnippetIndex(initialPool, prevIdx);
+      sessionStorage.setItem('devtype_last_snippet_idx', String(nextIdx));
+      return nextIdx;
+    } catch {
+      return Math.floor(Math.random() * 5);
+    }
+  });
 
   const currentSnippet = useMemo(() => {
     return languageSnippets[snippetIndex % languageSnippets.length] || languageSnippets[0];
@@ -197,7 +211,10 @@ export default function App() {
 
   // Restart typing test cleanly
   const handleRestart = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
     setStatus('idle');
     setCurrentIndex(0);
     setTypedChars([]);
@@ -216,11 +233,29 @@ export default function App() {
     setFinalStats(null);
   }, [duration]);
 
-  // Change snippet
+  // Change snippet (cycle to next in pool)
   const handleNextSnippet = useCallback(() => {
-    setSnippetIndex((prev) => (prev + 1) % languageSnippets.length);
+    setSnippetIndex((prev) => {
+      const nextIdx = (prev + 1) % languageSnippets.length;
+      try {
+        sessionStorage.setItem('devtype_last_snippet_idx', String(nextIdx));
+      } catch {}
+      return nextIdx;
+    });
     handleRestart();
   }, [languageSnippets.length, handleRestart]);
+
+  // Shuffle snippet (pick random distinct snippet in pool)
+  const handleShuffleSnippet = useCallback(() => {
+    setSnippetIndex((prev) => {
+      const nextIdx = getRandomSnippetIndex(languageSnippets, prev);
+      try {
+        sessionStorage.setItem('devtype_last_snippet_idx', String(nextIdx));
+      } catch {}
+      return nextIdx;
+    });
+    handleRestart();
+  }, [languageSnippets, handleRestart]);
 
   // Switch language
   const handleSelectLanguage = useCallback((langId) => {
@@ -284,7 +319,10 @@ export default function App() {
   // Pause / Resume toggle
   const handleTogglePause = useCallback(() => {
     if (status === 'running') {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
       const currentSegment = segmentStartTime ? Date.now() - segmentStartTime : 0;
       setAccumulatedMs((prev) => prev + currentSegment);
       setSegmentStartTime(null);
@@ -304,9 +342,12 @@ export default function App() {
   const liveRawWpm = Math.max(0, (totalTyped / 5) / activeMinutes);
   const liveAccuracy = totalTyped > 0 ? (correctCount / totalTyped) * 100 : 100;
 
-  // Complete test handler
+  // Complete test handler: immediately stops timer and calculates final stats accurately
   const completeTest = useCallback((finalTotalSeconds) => {
-    if (timerRef.current) clearInterval(timerRef.current);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
     setStatus('completed');
     playCompletionSound(soundVolume);
 
@@ -336,11 +377,28 @@ export default function App() {
     });
   }, [soundVolume, selectedLanguage]);
 
+  // Centralized snippet completion check (fixes timer running when done typing in any mode)
+  const checkSnippetFinished = useCallback((nextIdx, targetCodeLength, s) => {
+    if (nextIdx >= targetCodeLength) {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      const curSegment = s.segmentStartTime ? Date.now() - s.segmentStartTime : 0;
+      const totalSecs = Math.max(1, Math.round((s.accumulatedMs + curSegment) / 1000));
+      completeTest(totalSecs);
+      return true;
+    }
+    return false;
+  }, [completeTest]);
+
   // 1-second interval ticker for running tests
   useEffect(() => {
     if (status === 'running') {
       timerRef.current = setInterval(() => {
         const s = stateRef.current;
+        if (s.status !== 'running') return;
+
         const now = Date.now();
         const seg = s.segmentStartTime ? now - s.segmentStartTime : 0;
         const totalMs = s.accumulatedMs + seg;
@@ -366,7 +424,12 @@ export default function App() {
         }
       }, 1000);
 
-      return () => clearInterval(timerRef.current);
+      return () => {
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+      };
     }
   }, [status, completeTest]);
 
@@ -417,15 +480,15 @@ export default function App() {
       // Next snippet shortcut: Ctrl + Enter
       if (e.ctrlKey && key === 'Enter') {
         e.preventDefault();
-        handleNextSnippet();
+        handleShuffleSnippet();
         return;
       }
 
-      // If test is completed, allow Enter to restart
+      // If test is completed, allow Enter to load next snippet
       if (stateRef.current.status === 'completed') {
         if (key === 'Enter') {
           e.preventDefault();
-          handleRestart();
+          handleNextSnippet();
         }
         return;
       }
@@ -450,7 +513,7 @@ export default function App() {
       if (key === 'Backspace') {
         e.preventDefault();
         if (s.currentIndex > 0) {
-          playKeySound(s.soundType, s.soundVolume, false);
+          playKeySound(s.soundType, s.soundVolume, false, 'backspace');
 
           let charsToRemove = 1;
           if (s.autoIndent) {
@@ -465,7 +528,6 @@ export default function App() {
               }
             }
             if (lastNewlineIdx !== -1) {
-              // All characters between lastNewlineIdx and currentIndex were spaces
               charsToRemove = s.currentIndex - lastNewlineIdx;
             }
           }
@@ -501,18 +563,15 @@ export default function App() {
           }
           const numToAdvance = Math.min(spaceCount, 2);
           if (numToAdvance > 0) {
-            playKeySound(s.soundType, s.soundVolume, false, true);
+            playKeySound(s.soundType, s.soundVolume, false, 'space');
             setCorrectCount((prev) => prev + numToAdvance);
             const spaces = Array(numToAdvance).fill(' ');
             setTypedChars((prev) => [...prev, ...spaces]);
             const nextIdx = s.currentIndex + numToAdvance;
             setCurrentIndex(nextIdx);
 
-            if (s.mode === 'snippet' && nextIdx >= targetCode.length) {
-              const curSegment = s.segmentStartTime ? Date.now() - s.segmentStartTime : 0;
-              const totalSecs = Math.max(1, Math.round((s.accumulatedMs + curSegment) / 1000));
-              completeTest(totalSecs);
-            }
+            // Check if finished (stops timer immediately in any mode)
+            checkSnippetFinished(nextIdx, targetCode.length, s);
           }
         }
         return;
@@ -522,10 +581,12 @@ export default function App() {
       let inputChar = key;
       if (key === 'Enter') inputChar = '\n';
 
+      const soundKeyType = inputChar === ' ' ? 'space' : inputChar === '\n' ? 'enter' : 'regular';
+
       // Character evaluation
       if (inputChar === targetChar) {
         // Correct character typed
-        playKeySound(s.soundType, s.soundVolume, false, inputChar === ' ');
+        playKeySound(s.soundType, s.soundVolume, false, soundKeyType);
 
         let charsToAdd = [inputChar];
         let correctIncrement = 1;
@@ -554,15 +615,11 @@ export default function App() {
         setLastCorrectKey(code);
         setTimeout(() => setLastCorrectKey(null), 150);
 
-        // Check if finished in snippet mode
-        if (s.mode === 'snippet' && nextIdx >= targetCode.length) {
-          const curSegment = s.segmentStartTime ? Date.now() - s.segmentStartTime : 0;
-          const totalSecs = Math.max(1, Math.round((s.accumulatedMs + curSegment) / 1000));
-          completeTest(totalSecs);
-        }
+        // Check if finished (stops timer immediately in any mode)
+        checkSnippetFinished(nextIdx, targetCode.length, s);
       } else {
         // Incorrect character typed
-        playKeySound(s.soundType, s.soundVolume, false, inputChar === ' ');
+        playKeySound(s.soundType, s.soundVolume, true, soundKeyType);
         setErrorCount((prev) => prev + 1);
         setIncorrectCount((prev) => prev + 1);
 
@@ -580,11 +637,8 @@ export default function App() {
         const nextIdx = s.currentIndex + 1;
         setCurrentIndex(nextIdx);
 
-        if (s.mode === 'snippet' && nextIdx >= targetCode.length) {
-          const curSegment = s.segmentStartTime ? Date.now() - s.segmentStartTime : 0;
-          const totalSecs = Math.max(1, Math.round((s.accumulatedMs + curSegment) / 1000));
-          completeTest(totalSecs);
-        }
+        // Check if finished (stops timer immediately in any mode)
+        checkSnippetFinished(nextIdx, targetCode.length, s);
       }
     };
 
@@ -603,7 +657,15 @@ export default function App() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [isSettingsOpen, isAboutOpen, handleRestart, handleNextSnippet, handleTogglePause, completeTest]);
+  }, [
+    isSettingsOpen,
+    isAboutOpen,
+    handleRestart,
+    handleNextSnippet,
+    handleShuffleSnippet,
+    handleTogglePause,
+    checkSnippetFinished
+  ]);
 
   // Expected character for virtual keyboard hint
   const currentTargetChar = currentSnippet.code[currentIndex] || '';
@@ -631,7 +693,7 @@ export default function App() {
       <Header
         soundType={soundType}
         soundVolume={soundVolume}
-        onToggleSound={() => setSoundType(soundType === 'silent' ? 'thock' : 'silent')}
+        onToggleSound={() => setSoundType(soundType === 'silent' ? 'creamy' : 'silent')}
         onOpenSettings={() => setIsSettingsOpen(true)}
         colorMode={colorMode}
         onToggleColorMode={handleToggleColorMode}
@@ -641,7 +703,7 @@ export default function App() {
       <main className="main-content">
         {status !== 'completed' ? (
           <div className="typing-view animate-fade-in">
-            {/* Minimal Config Bar */}
+            {/* Minimal Config Bar with Shuffle and Snippet Count */}
             <ConfigBar
               category={category}
               onSelectCategory={handleSelectCategory}
@@ -655,6 +717,9 @@ export default function App() {
               onSelectDuration={handleSelectDuration}
               autoIndent={autoIndent}
               onToggleAutoIndent={handleToggleAutoIndent}
+              snippetIndex={snippetIndex}
+              totalSnippets={languageSnippets.length}
+              onShuffleSnippet={handleShuffleSnippet}
               disabled={status === 'running'}
             />
 
@@ -671,6 +736,7 @@ export default function App() {
               caretStyle={caretStyle}
               showWhitespace={showWhitespace}
               autoIndent={autoIndent}
+              snippetTitle={currentSnippet.title}
               onRestart={handleRestart}
               onTogglePause={handleTogglePause}
               isFocused={isFocused}

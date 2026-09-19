@@ -13,6 +13,7 @@ export default function TypingArea({
   caretStyle = 'line',
   showWhitespace = true,
   autoIndent = true,
+  snippetTitle = '',
   onRestart,
   onTogglePause,
   isFocused = true,
@@ -66,6 +67,24 @@ export default function TypingArea({
               {timeRemaining}s
             </span>
           </div>
+
+          {/* Progress */}
+          <div className="telemetry-item hide-on-mobile">
+            <span className="telemetry-label">progress</span>
+            <span className="telemetry-value font-mono">
+              {Math.min(tokens.length, currentIndex)}/{tokens.length}
+            </span>
+          </div>
+
+          {/* Snippet Title */}
+          {snippetTitle && (
+            <div className="telemetry-item snippet-title-item hide-on-mobile">
+              <span className="telemetry-label">snippet</span>
+              <span className="telemetry-value font-mono snippet-title-text" title={snippetTitle}>
+                {snippetTitle}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Action Controls: Pause & Restart */}

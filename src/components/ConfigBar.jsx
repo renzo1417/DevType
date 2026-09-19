@@ -1,5 +1,5 @@
 import React from 'react';
-import { Zap } from 'lucide-react';
+import { Zap, Shuffle } from 'lucide-react';
 import { LANGUAGES, DIFFICULTIES, CONTENT_CATEGORIES } from '../data/snippets';
 
 export const MODES = [
@@ -22,6 +22,9 @@ export default function ConfigBar({
   onSelectDuration,
   autoIndent = true,
   onToggleAutoIndent,
+  snippetIndex = 0,
+  totalSnippets = 1,
+  onShuffleSnippet,
   disabled = false
 }) {
   const showLanguages = category === 'code' || category === 'keywords';
@@ -134,8 +137,27 @@ export default function ConfigBar({
             <span>Auto-Indent</span>
           </button>
         </div>
+
+        {/* Quick Shuffle / Next Snippet Button */}
+        {totalSnippets > 1 && (
+          <>
+            <div className="config-divider" />
+            <div className="config-group">
+              <button
+                type="button"
+                className="config-option-btn shuffle-snippet-btn"
+                onClick={onShuffleSnippet}
+                disabled={disabled}
+                title={`Shuffle / Next Snippet (${snippetIndex + 1} of ${totalSnippets}) — Shortcut: Ctrl+Enter`}
+                aria-label="Load another code snippet"
+              >
+                <Shuffle size={13} className="shuffle-icon" />
+                <span>Code {snippetIndex + 1}/{totalSnippets}</span>
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
 }
-
