@@ -16,12 +16,21 @@ lerna-debug.log*
 *.njsproj
 *.sln
 *.sw?
+*.patch
+*.diff
 
-# Node Dependencies
+# Node Dependencies & Build Outputs
 node_modules
 dist
 dist-ssr
 *.local
+
+# Testing & Coverage
+coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
 
 # Environment variables
 .env
@@ -38,3 +47,4 @@ dist-ssr
 .Trashes
 ehthumbs.db
 Thumbs.db
+desktop.ini
