@@ -1,83 +1,98 @@
-# DevType — Syntax Speedtyper
+# DevType
 
-> A modern, minimalist syntax typing test engineered specifically for developers and programming language muscle memory.
+Focused typing practice for developers, built with React 18, Vite, and vanilla CSS.
 
----
+## Run locally
 
-## ⚡ Features
-
-- **4 Practice Categories**:
-  - **Full Code**: Multi-line coding snippets across **JavaScript**, **Python**, **C++**, **Java**, and **HTML** with beginner-friendly & advanced tiers.
-  - **Keywords & Flow**: Clean, fast 1–2 line syntax expressions & core keywords with minimal symbols.
-  - **Developer Words**: High-frequency developer vocabulary in camelCase/PascalCase (no symbols, pure typing rhythm).
-  - **Symbols Drill**: Dedicated bracket, arrow, and operator practice (`() => {}`, `[]`, `&& ||`, `<>`).
-- **Smart Auto-Indent Engine**: Pressing `Enter` automatically advances past leading line indentation spaces so you land directly on the first code token (with 1-click toggle on the config bar).
-- **Smart `Tab` Key**: Pressing `Tab` cleanly consumes 2 spaces of indentation without error penalties.
-- **Visual Whitespace Clarity**: Untyped spaces display faint dots (`·`) and return cues (`↵`) so code structure is instantly readable.
-- **Tactile 60% Virtual Keyboard**: Interactive mechanical keyboard layout with live key tracking, dynamic active key glows, and visual target key hints.
-- **Physical Switch Audio Synthesizer**: 8 synthesized mechanical switch sound profiles powered by the Web Audio API:
-  - *Cream Thock (Deep)*
-  - *Cherry MX Blue (Clicky)*
-  - *Holy Panda (Tactile)*
-  - *Vintage Typewriter*
-  - *Gateron Yellow (Smooth Linear)*
-  - *Kailh Box Navy (Heavy Click)*
-  - *Topre Electrostatic (Soft Pop)*
-  - *Mute / Silent*
-- **Dynamic Accent Themes**: 5 customizable mechanical keycap palettes (Solar Amber, Emerald Mint, Electric Azure, Cyber Violet, Pure Minimal).
-- **Full Light & Dark Modes**: Instant seamless base theme toggle with automatic persistence in `localStorage`.
-- **Live Telemetry & Performance Analytics**: Real-time tracking of WPM, Raw WPM, Accuracy, Error Breakdown, and timeline SVG performance graphs.
-- **Developer Modes**:
-  - *Time Mode* (15s, 30s, 60s, 120s)
-  - *Snippet Mode* (Complete snippet)
-  - *Master Mode* (Hardcore instant restart on error)
-  - *Caret Styles* (Line, Block, Underline)
-
----
-
-## ⌨️ Keyboard Shortcuts
-
-| Shortcut | Description |
-| :--- | :--- |
-| `Esc` | Instant Test Restart |
-| `Enter` | New line (with Auto-Indent, jumps to first code token) |
-| `Tab` | Smart Indent (advances 2 spaces) |
-| `Backspace` | Deletes char (or entire auto-indentation if at line start) |
-| `Ctrl` + `Enter` | Next Code Snippet |
-| `Click outside` | Pause & Blur Focus |
-
----
-
-## 🛠️ Tech Stack
-
-- **Framework**: React 18
-- **Build Tool**: Vite
-- **Styling**: Vanilla CSS (Custom Design System)
-- **Audio Engine**: Web Audio API (Physical Synthesis)
-- **Icons**: Lucide React
-- **Typography**: IBM Plex Sans & JetBrains Mono
-
----
-
-## 🚀 Getting Started
-
-### 1. Install Dependencies
-```bash
-npm install
-```
-
-### 2. Run Locally
-```bash
+```sh
+npm ci
 npm run dev
 ```
 
-### 3. Build for Production
-```bash
+Open http://localhost:3000. Node 22.20 or newer is recommended.
+
+## Practice
+
+- **Code:** multiline snippets in JavaScript, Python, C++, Java, and HTML.
+- **Keywords:** shorter expressions and language idioms.
+- **Words:** developer vocabulary, with independent word boundaries and free-flow mistakes.
+- **Symbols:** brackets, operators, and punctuation.
+
+Timed tests run for 15, 30, 60, or 120 active seconds, adding content as needed.
+Snippet tests finish the current exercise. Empty spaces cannot skip words.
+In words mode, Space commits a word; Backspace can return to a previous one.
+Code preserves character positions and requires Enter at explicit newlines.
+Automatic indentation is enabled by default and can be changed in Settings.
+
+The timer pauses when focus leaves the typing input, a dialog opens, or the tab
+is hidden. Click the canvas to resume, or focus its input and continue typing.
+The on-screen keyboard starts collapsed and supports letters, numbers, shifted
+symbols, Space, Enter, Tab, Backspace, and modifier combinations.
+
+### Shortcuts
+
+| Key | Action |
+| --- | --- |
+| Escape | Restart this exercise; close an open dialog |
+| Ctrl / Cmd + Enter | Next exercise |
+| Enter on results | Next exercise |
+| Backspace | Correct text or return to the preceding word |
+| Ctrl / Alt / Cmd + Backspace | Delete the current word |
+| Tab | Indent at a leading code space; otherwise navigate controls |
+
+### Scoring
+
+- **WPM:** retained correct, manually entered characters / 5 / active minutes.
+- **Raw WPM:** all entered characters / 5 / active minutes, including corrected input.
+- **Accuracy:** correct input attempts / (all input attempts + skipped letters).
+- Automatic indentation and separators between timed code snippets count toward
+  progress but do not increase WPM or raw WPM.
+- Results show retained correct / incorrect / extra / missed characters.
+  Accuracy remembers errors even after text is corrected.
+
+### Sound and preferences
+
+Soft and Mechanical use 32 bundled CC0 recordings. Soft applies a low-pass filter.
+Recordings are delivered in one cached JSON pack to avoid download-manager
+interception of WAV requests. They are decoded once, balanced, and played with their
+leading silence removed. Playback never waits for downloads or decoding.
+Keyboard, preview, and optional completion sounds share the same mute control.
+Sound starts at 35%; completion cues start disabled.
+
+Preferences are validated and stored under `devtype.preferences.v1`. Existing
+appearance, category, indentation, and whitespace preferences migrate on load.
+The app keeps working if storage or browser audio is unavailable.
+
+The JSON pack is the only bundled copy of the recordings. A regression test
+checks its 32 WAV headers, total size, and SHA-256 digest against the verified
+original recordings; separate WAV copies and a packing script are unnecessary.
+
+Recording provenance and license: [public/audio/keyboard/LICENSE.md](public/audio/keyboard/LICENSE.md).
+
+## Verify
+
+```sh
+npm test
+npm run test:e2e
 npm run build
 ```
 
----
+The browser suite uses an installed Google Chrome and starts its own Vite server
+on port 3100. It covers desktop and an emulated iPhone-sized Chrome viewport,
+including mobile input/composition events. Physical iOS/Safari keyboard and audio
+behavior requires an actual device check; emulation does not establish that.
+Failure traces, screenshots, and input timing reports are written to ignored
+`test-results/`. Light/dark code and words screenshots are captured by the visual
+checks. Vitest covers the session state machine, exercise pools, preferences,
+and cached audio playback.
 
-## 📄 License
+## Implementation
 
-MIT
+- `src/engine/session.js`: pure session transitions, timing, scoring, and content continuation.
+- `src/hooks/useTypingSession.js`: synchronous event state, timer lifecycle, and audio feedback.
+- `src/hooks/useTypingInput.js`: keyboard, beforeinput, composition, and mobile input routing.
+- `src/components/TypingArea.jsx`: stable caret and measured row movement.
+- `src/utils/audio.js`: cached recordings, balanced playback, and master mute.
+
+No account or backend is required. The project is configured for local development;
+this change does not publish a website.

@@ -1,162 +1,97 @@
 import React from 'react';
-import { Zap, Shuffle } from 'lucide-react';
-import { LANGUAGES, DIFFICULTIES, CONTENT_CATEGORIES } from '../data/snippets';
+import { Code2, Braces, WholeWord, Parentheses } from 'lucide-react';
+import { LANGUAGES, DIFFICULTIES } from '../data/snippets';
 
-export const MODES = [
-  { id: 'time', label: 'Time' },
-  { id: 'snippet', label: 'Snippet' }
+const categories = [
+  { id: 'code', label: 'code', Icon: Code2 },
+  { id: 'keywords', label: 'keywords', Icon: Braces },
+  { id: 'words', label: 'words', Icon: WholeWord },
+  { id: 'symbols', label: 'symbols', Icon: Parentheses },
 ];
 
-export const DURATIONS = [15, 30, 60, 120];
-
-export default function ConfigBar({
-  category = 'code',
-  onSelectCategory,
-  selectedLanguage,
-  onSelectLanguage,
-  difficulty,
-  onSelectDifficulty,
-  mode,
-  onSelectMode,
-  duration,
-  onSelectDuration,
-  autoIndent = true,
-  onToggleAutoIndent,
-  snippetIndex = 0,
-  totalSnippets = 1,
-  onShuffleSnippet,
-  disabled = false
-}) {
-  const showLanguages = category === 'code' || category === 'keywords';
-
+export default function ConfigBar({ preferences, onChange, languageRef }) {
   return (
-    <div className="config-bar-wrapper">
-      <div className="config-bar-container">
-        {/* Practice Category Selection */}
-        <div className="config-group category-group">
-          {CONTENT_CATEGORIES.map((cat) => (
+    <div className="configuration">
+      <div className="config-bar">
+        <div className="config-categories" role="group" aria-label="Practice category">
+          {categories.map(({ id, label, Icon }) => (
             <button
-              key={cat.id}
+              key={id}
               type="button"
-              className={`config-option-btn category-pill ${category === cat.id ? 'is-active' : ''}`}
-              onClick={() => onSelectCategory && onSelectCategory(cat.id)}
-              disabled={disabled}
-              title={cat.desc}
+              className={`config-option ${preferences.category === id ? 'is-active' : ''}`}
+              aria-pressed={preferences.category === id}
+              onClick={() => onChange({ category: id })}
             >
-              {cat.name}
+              <Icon size={15} />
+              <span>{label}</span>
             </button>
           ))}
         </div>
-
-        {/* Language Selection (shown for Code and Keywords) */}
-        {showLanguages && (
-          <>
-            <div className="config-divider" />
-            <div className="config-group">
-              {LANGUAGES.map((lang) => (
-                <button
-                  key={lang.id}
-                  type="button"
-                  className={`config-option-btn ${selectedLanguage === lang.id ? 'is-active' : ''}`}
-                  onClick={() => onSelectLanguage(lang.id)}
-                  disabled={disabled}
-                >
-                  {lang.name}
-                </button>
+        <span className="config-divider" aria-hidden="true" />
+        <div className="config-modes" role="group" aria-label="Test mode">
+          {['time', 'snippet'].map((mode) => (
+            <button
+              type="button"
+              key={mode}
+              className={`config-option ${preferences.mode === mode ? 'is-active' : ''}`}
+              aria-pressed={preferences.mode === mode}
+              onClick={() => onChange({ mode })}
+            >
+              {mode}
+            </button>
+          ))}
+        </div>
+        <div
+          className="config-durations"
+          role="group"
+          aria-label="Test duration"
+          data-hidden={preferences.mode !== 'time' || undefined}
+        >
+          {[15, 30, 60, 120].map((duration) => (
+            <button
+              type="button"
+              key={duration}
+              tabIndex={preferences.mode === 'time' ? 0 : -1}
+              disabled={preferences.mode !== 'time'}
+              className={`config-option ${preferences.duration === duration ? 'is-active' : ''}`}
+              aria-pressed={preferences.duration === duration}
+              onClick={() => onChange({ duration })}
+            >
+              {duration}s
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="context-controls">
+        {(preferences.category === 'code' || preferences.category === 'keywords') && (
+          <label className="inline-select">
+            language
+            <select
+              ref={languageRef}
+              aria-label="Language"
+              value={preferences.selectedLanguage}
+              onChange={(event) => onChange({ selectedLanguage: event.target.value })}
+            >
+              {LANGUAGES.map((language) => (
+                <option key={language.id} value={language.id}>
+                  {language.name}
+                </option>
               ))}
-            </div>
-          </>
+            </select>
+          </label>
         )}
-
-        <div className="config-divider" />
-
-        {/* Difficulty Selection */}
-        <div className="config-group">
-          {DIFFICULTIES.map((diff) => (
-            <button
-              key={diff}
-              type="button"
-              className={`config-option-btn ${difficulty === diff ? 'is-active' : ''}`}
-              onClick={() => onSelectDifficulty(diff)}
-              disabled={disabled}
-            >
-              {diff}
-            </button>
-          ))}
-        </div>
-
-        <div className="config-divider" />
-
-        {/* Mode Selection */}
-        <div className="config-group">
-          {MODES.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              className={`config-option-btn ${mode === m.id ? 'is-active' : ''}`}
-              onClick={() => onSelectMode(m.id)}
-              disabled={disabled}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Duration Selection (if Time mode) */}
-        {mode === 'time' && (
-          <>
-            <div className="config-divider" />
-            <div className="config-group">
-              {DURATIONS.map((dur) => (
-                <button
-                  key={dur}
-                  type="button"
-                  className={`config-option-btn ${duration === dur ? 'is-active' : ''}`}
-                  onClick={() => onSelectDuration(dur)}
-                  disabled={disabled}
-                >
-                  {dur}s
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* Auto-Indent Quick Toggle */}
-        <div className="config-divider" />
-        <div className="config-group">
-          <button
-            type="button"
-            className={`config-option-btn auto-indent-toggle-btn ${autoIndent ? 'is-active is-indent-on' : ''}`}
-            onClick={onToggleAutoIndent}
-            disabled={disabled}
-            title={autoIndent ? 'Auto-Indent is ON: Enter key automatically advances past indentation spaces' : 'Auto-Indent is OFF: Manual spaces required'}
-            aria-label="Toggle Auto-Indent"
+        <label className="inline-select">
+          difficulty
+          <select
+            aria-label="Difficulty"
+            value={preferences.difficulty}
+            onChange={(event) => onChange({ difficulty: event.target.value })}
           >
-            <Zap size={13} className="indent-zap-icon" />
-            <span>Auto-Indent</span>
-          </button>
-        </div>
-
-        {/* Quick Shuffle / Next Snippet Button */}
-        {totalSnippets > 1 && (
-          <>
-            <div className="config-divider" />
-            <div className="config-group">
-              <button
-                type="button"
-                className="config-option-btn shuffle-snippet-btn"
-                onClick={onShuffleSnippet}
-                disabled={disabled}
-                title={`Shuffle / Next Snippet (${snippetIndex + 1} of ${totalSnippets}) — Shortcut: Ctrl+Enter`}
-                aria-label="Load another code snippet"
-              >
-                <Shuffle size={13} className="shuffle-icon" />
-                <span>Code {snippetIndex + 1}/{totalSnippets}</span>
-              </button>
-            </div>
-          </>
-        )}
+            {DIFFICULTIES.map((difficulty) => (
+              <option key={difficulty}>{difficulty}</option>
+            ))}
+          </select>
+        </label>
       </div>
     </div>
   );

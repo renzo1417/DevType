@@ -1,187 +1,97 @@
-import React, { useEffect, useState } from 'react';
-import confetti from 'canvas-confetti';
-import {
-  RotateCcw,
-  ArrowRight,
-  Code2,
-  Share2,
-  CheckCircle2
-} from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { ArrowRight, RotateCcw, Languages, Copy, Check } from 'lucide-react';
 import PerformanceChart from './PerformanceChart';
 
-export default function ResultsScreen({
-  stats = {
-    wpm: 0,
-    rawWpm: 0,
-    accuracy: 100,
-    correctChars: 0,
-    incorrectChars: 0,
-    extraChars: 0,
-    totalChars: 0,
-    duration: 30,
-    timeTaken: 30,
-    language: 'javascript',
-    snippetTitle: '',
-    difficulty: 'Beginner',
-    timeline: []
-  },
-  onRestart,
-  onNextSnippet,
-  onOpenLanguagePicker
-}) {
-  const [copied, setCopied] = useState(false);
-
+export default function ResultsScreen({ session, stats, onRestart, onNext, onLanguage }) {
+  const [copyStatus, setCopyStatus] = useState('');
+  const headingRef = useRef(null);
   useEffect(() => {
-    if (stats.accuracy >= 90 && stats.wpm > 25) {
-      try {
-        confetti({
-          particleCount: 40,
-          spread: 55,
-          origin: { y: 0.7 },
-          colors: ['#ea580c', '#38bdf8', '#22c55e', '#ffffff']
-        });
-      } catch (e) {}
-    }
-  }, [stats]);
-
-  // Keyboard shortcut listener: Enter = Next Snippet, Esc = Retry Same Code
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey) {
-        e.preventDefault();
-        onNextSnippet ? onNextSnippet() : onRestart();
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        onRestart();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onNextSnippet, onRestart]);
-
-  const handleCopyResult = () => {
-    const text = `⚡ DevType v2.0 Result\n` +
-      `Language: ${stats.language.toUpperCase()} (${stats.difficulty})\n` +
-      `WPM: ${Math.round(stats.wpm)} (Raw: ${Math.round(stats.rawWpm)})\n` +
-      `Accuracy: ${stats.accuracy.toFixed(1)}%\n` +
-      `Time: ${Math.round(stats.timeTaken)}s`;
-
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+    headingRef.current?.focus({ preventScroll: true });
+  }, []);
+  const { config } = session;
+  const share = async () => {
+    try {
+      if (!navigator.clipboard) throw new Error('Clipboard unavailable');
+      await navigator.clipboard.writeText(
+        `DevType\n${config.category} · ${config.selectedLanguage} · ${config.mode === 'time' ? `${config.duration}s` : 'snippet'}\n${Math.round(stats.wpm)} WPM · ${Math.round(stats.rawWpm)} raw · ${stats.accuracy.toFixed(1)}% accuracy\n${stats.timeTaken.toFixed(1)}s active time`,
+      );
+      setCopyStatus('Result copied.');
+    } catch {
+      setCopyStatus('Could not copy. Please allow clipboard access and try again.');
     }
   };
-
   return (
-    <div className="results-container animate-fade-in">
-      {/* Header Info */}
-      <div className="results-header">
-        <div className="results-meta">
-          <span className="results-lang font-mono">{stats.language.toUpperCase()}</span>
-          <span className="results-divider">•</span>
-          <span className="results-title-text">{stats.snippetTitle || 'Custom Code'}</span>
-          <span className="results-divider">•</span>
-          <span className="results-difficulty-badge">{stats.difficulty}</span>
+    <section className="results-screen" aria-label="Test results">
+      <div className="results-intro">
+        <div>
+          <p className="eyebrow">
+            {config.category} / {config.mode === 'time' ? `${config.duration} seconds` : 'snippet'}
+          </p>
+          <h1 ref={headingRef} tabIndex={-1}>
+            Test complete.
+          </h1>
         </div>
+        <span className="result-exercise">{session.chunks[0].exercise.title}</span>
       </div>
-
-      {/* Main Stats Summary Grid */}
-      <div className="results-stats-row">
-        {/* Net WPM */}
-        <div className="result-stat-block">
-          <div className="result-stat-label">wpm</div>
-          <div className="result-stat-number accent-text font-mono">
+      <div className="results-stats">
+        <div>
+          <span className="stat-label">wpm</span>
+          <strong className="result-wpm" data-testid="result-wpm">
             {Math.round(stats.wpm)}
-          </div>
-          <div className="result-stat-sub font-mono">
-            raw {Math.round(stats.rawWpm)}
-          </div>
+          </strong>
+          <span className="stat-sub">{Math.round(stats.rawWpm)} raw</span>
         </div>
-
-        {/* Accuracy */}
-        <div className="result-stat-block">
-          <div className="result-stat-label">acc</div>
-          <div className="result-stat-number font-mono">
-            {stats.accuracy.toFixed(1)}%
-          </div>
-          <div className="result-stat-sub font-mono">
-            {stats.correctChars} / {stats.incorrectChars}
-          </div>
+        <div>
+          <span className="stat-label">accuracy</span>
+          <strong data-testid="result-accuracy">
+            {stats.accuracy.toFixed(1)}
+            <small>%</small>
+          </strong>
+          <span className="stat-sub">all attempts included</span>
         </div>
-
-        {/* Characters Breakdown */}
-        <div className="result-stat-block">
-          <div className="result-stat-label">characters</div>
-          <div className="result-stat-number font-mono chars-number">
-            <span className="char-ok">{stats.correctChars}</span>
-            <span className="char-slash">/</span>
-            <span className="char-err">{stats.incorrectChars}</span>
-          </div>
-          <div className="result-stat-sub font-mono">
-            correct / errors
-          </div>
-        </div>
-
-        {/* Time Taken */}
-        <div className="result-stat-block">
-          <div className="result-stat-label">time</div>
-          <div className="result-stat-number font-mono">
-            {Math.round(stats.timeTaken)}s
-          </div>
-          <div className="result-stat-sub font-mono">
-            {stats.duration ? `${stats.duration}s test` : 'completed'}
-          </div>
+        <div>
+          <span className="stat-label">active time</span>
+          <strong>
+            {stats.timeTaken.toFixed(1)}
+            <small>s</small>
+          </strong>
+          <span className="stat-sub">paused time excluded</span>
         </div>
       </div>
-
-      {/* Performance Graph */}
-      {stats.timeline && stats.timeline.length > 1 && (
-        <div className="results-chart-section">
-          <PerformanceChart timeline={stats.timeline} />
-        </div>
-      )}
-
-      {/* Action Buttons */}
+      <div className="character-summary">
+        <span>characters</span>
+        <strong data-testid="character-breakdown">
+          {stats.correctChars} / {stats.incorrectChars} / {stats.extraChars} / {stats.missedChars}
+        </strong>
+        <span>correct / incorrect / extra / missed</span>
+      </div>
+      <p className="result-progress" data-testid="result-progress">
+        {stats.progress} {config.category === 'words' ? 'words' : 'characters'} completed
+        {stats.automaticChars
+          ? ` · ${stats.automaticChars} spacing characters supplied automatically`
+          : ''}
+      </p>
+      <PerformanceChart timeline={stats.timeline} />
       <div className="results-actions">
-        <button
-          type="button"
-          className="result-action-btn primary"
-          onClick={onNextSnippet}
-          title="Next Code Snippet (Enter)"
-        >
-          <ArrowRight size={15} />
-          <span>Next Code <kbd className="btn-kbd">Enter</kbd></span>
+        <button className="button-primary" type="button" onClick={onNext}>
+          <ArrowRight size={16} />
+          Next exercise
         </button>
-
-        <button
-          type="button"
-          className="result-action-btn"
-          onClick={onRestart}
-          title="Retry Same Snippet (Esc)"
-        >
+        <button className="text-button" type="button" onClick={onRestart}>
           <RotateCcw size={15} />
-          <span>Retry <kbd className="btn-kbd">Esc</kbd></span>
+          Retry
         </button>
-
-        <button
-          type="button"
-          className="result-action-btn"
-          onClick={onOpenLanguagePicker}
-        >
-          <Code2 size={15} />
-          <span>Change Language</span>
+        <button className="text-button" type="button" onClick={onLanguage}>
+          <Languages size={15} />
+          Change language
         </button>
-
-        <button
-          type="button"
-          className="result-action-btn ghost"
-          onClick={handleCopyResult}
-        >
-          {copied ? <CheckCircle2 size={15} className="accent-text" /> : <Share2 size={15} />}
-          <span>{copied ? 'Copied' : 'Share'}</span>
+        <button className="text-button share-button" type="button" onClick={share}>
+          {copyStatus === 'Result copied.' ? <Check size={15} /> : <Copy size={15} />}Copy result
         </button>
       </div>
-    </div>
+      <p className="copy-status" role="status">
+        {copyStatus}
+      </p>
+    </section>
   );
 }

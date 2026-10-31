@@ -1,329 +1,284 @@
-import React, { useState } from 'react';
-import {
-  X,
-  Volume2,
-  Sliders,
-  Sparkles,
-  Keyboard,
-  Type,
-  Sun,
-  Moon,
-  Command
-} from 'lucide-react';
-import { SWITCH_SOUNDS, playKeySound } from '../utils/audio';
-import { KEYBOARD_THEMES } from '../utils/themes';
+import React, { useId, useState, useSyncExternalStore } from 'react';
+import { Play, Volume2 } from 'lucide-react';
+import Dialog from './Dialog';
+import { keyboardAudio } from '../utils/audio';
 
-export default function SettingsModal({
-  isOpen,
-  onClose,
-  soundType,
-  onSoundTypeChange,
-  soundVolume,
-  onSoundVolumeChange,
-  caretStyle,
-  onCaretStyleChange,
-  activeTheme,
-  onSelectTheme,
-  showKeyboard,
-  onToggleKeyboard,
-  showKeyHints,
-  onToggleKeyHints,
-  masterMode,
-  onToggleMasterMode,
-  autoIndent = true,
-  onToggleAutoIndent,
-  showWhitespace = true,
-  onToggleWhitespace,
-  colorMode = 'dark',
-  onToggleColorMode
-}) {
-  const [activeTab, setActiveTab] = useState('audio');
-
-  if (!isOpen) return null;
-
+function Toggle({ label, description, checked, onChange }) {
+  const descriptionId = useId();
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-card settings-horizontal-modal animate-scale-up" onClick={(e) => e.stopPropagation()}>
-        {/* Modal Header */}
-        <div className="modal-header">
-          <div className="modal-title-group">
-            <Sliders size={16} className="accent-text" />
-            <h3 className="modal-title">Preferences</h3>
-          </div>
+    <label className="setting-toggle">
+      <span>
+        <span className="setting-label">{label}</span>
+        <span id={descriptionId} className="setting-description">
+          {description}
+        </span>
+      </span>
+      <input
+        type="checkbox"
+        aria-label={label}
+        aria-describedby={descriptionId}
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+      />
+      <span className="switch" aria-hidden="true" />
+    </label>
+  );
+}
+
+const accentNames = {
+  amber: 'Amber',
+  mint: 'Mint',
+  blue: 'Blue',
+  violet: 'Violet',
+  mono: 'Monochrome',
+};
+
+export default function SettingsModal({ preferences, onChange, onClose, initialTab = 'practice' }) {
+  const [tab, setTab] = useState(initialTab);
+  const audioStatus = useSyncExternalStore(keyboardAudio.subscribe, keyboardAudio.getStatus);
+  const toggle = (key, label, description) => (
+    <Toggle
+      key={key}
+      label={label}
+      description={description}
+      checked={preferences[key]}
+      onChange={(value) => onChange({ [key]: value })}
+    />
+  );
+  return (
+    <Dialog title="Settings" onClose={onClose} className="settings-dialog">
+      <nav className="settings-tabs" aria-label="Settings sections">
+        {['practice', 'appearance', 'sound', 'shortcuts'].map((section) => (
           <button
+            key={section}
             type="button"
-            className="modal-close-btn"
-            onClick={onClose}
-            aria-label="Close preferences"
+            className={tab === section ? 'is-active' : ''}
+            aria-current={tab === section ? 'page' : undefined}
+            onClick={() => setTab(section)}
           >
-            <X size={16} />
+            {section}
           </button>
-        </div>
-
-        {/* Horizontal Modal Container: Left Nav Sidebar + Right Content Area */}
-        <div className="horizontal-settings-layout">
-          {/* Left Navigation Sidebar */}
-          <nav className="settings-sidebar" aria-label="Settings Categories">
-            <button
-              type="button"
-              className={`sidebar-nav-tab ${activeTab === 'audio' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('audio')}
-            >
-              <Volume2 size={15} />
-              <span>Audio</span>
-            </button>
-
-            <button
-              type="button"
-              className={`sidebar-nav-tab ${activeTab === 'themes' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('themes')}
-            >
-              <Keyboard size={15} />
-              <span>Themes</span>
-            </button>
-
-            <button
-              type="button"
-              className={`sidebar-nav-tab ${activeTab === 'visuals' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('visuals')}
-            >
-              <Type size={15} />
-              <span>Visuals</span>
-            </button>
-
-            <button
-              type="button"
-              className={`sidebar-nav-tab ${activeTab === 'shortcuts' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('shortcuts')}
-            >
-              <Command size={15} />
-              <span>Shortcuts</span>
-            </button>
-          </nav>
-
-          {/* Right Content Panel */}
-          <div className="settings-panel-content">
-            {/* TAB 1: AUDIO */}
-            {activeTab === 'audio' && (
-              <div className="settings-tab-pane animate-fade-in">
-                <div className="pref-section">
-                  <div className="pref-section-title">
-                    <span>Mechanical Switch Audio Profiles</span>
-                  </div>
-
-                  <div className="sound-profile-grid">
-                    {SWITCH_SOUNDS.map((s) => (
-                      <button
-                        key={s.id}
-                        type="button"
-                        className={`sound-profile-btn ${soundType === s.id ? 'is-active' : ''}`}
-                        onClick={() => {
-                          onSoundTypeChange(s.id);
-                          playKeySound(s.id, soundVolume);
-                        }}
-                        title={s.desc || s.name}
-                      >
-                        <div className="sound-profile-btn-content">
-                          <span className="profile-name">{s.name}</span>
-                          {s.category && <span className="profile-badge">{s.category}</span>}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="pref-row" style={{ marginTop: '1.25rem' }}>
-                    <div className="pref-label-with-val">
-                      <label className="pref-label">Volume</label>
-                      <span className="font-mono text-muted">{Math.round(soundVolume * 100)}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.05"
-                      value={soundVolume}
-                      onChange={(e) => onSoundVolumeChange(parseFloat(e.target.value))}
-                      className="range-slider"
-                    />
-                  </div>
-                </div>
-              </div>
+        ))}
+      </nav>
+      <div className="settings-content">
+        {tab === 'practice' && (
+          <div>
+            <p className="section-intro">Set up the way you practice.</p>
+            {toggle(
+              'autoIndent',
+              'Automatic indentation',
+              'Enter skips the leading spaces on the next code line. Supplied spaces do not count toward WPM.',
             )}
-
-            {/* TAB 2: THEMES & COLOR MODE */}
-            {activeTab === 'themes' && (
-              <div className="settings-tab-pane animate-fade-in">
-                <div className="pref-section">
-                  <div className="pref-section-title">
-                    <span>Base Appearance</span>
-                  </div>
-
-                  <div className="pref-segmented-control" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: '1.25rem' }}>
-                    <button
-                      type="button"
-                      className={`seg-btn ${colorMode === 'dark' ? 'is-active' : ''}`}
-                      onClick={() => colorMode !== 'dark' && onToggleColorMode()}
-                    >
-                      <Moon size={14} />
-                      <span>Dark Theme</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={`seg-btn ${colorMode === 'light' ? 'is-active' : ''}`}
-                      onClick={() => colorMode !== 'light' && onToggleColorMode()}
-                    >
-                      <Sun size={14} />
-                      <span>Light Theme</span>
-                    </button>
-                  </div>
-
-                  <div className="pref-section-title">
-                    <span>Accent Palettes</span>
-                  </div>
-
-                  <div className="theme-grid">
-                    {KEYBOARD_THEMES.map((theme) => (
-                      <div
-                        key={theme.id}
-                        className={`theme-card-option ${activeTheme.id === theme.id ? 'is-selected' : ''}`}
-                        onClick={() => onSelectTheme(theme.id)}
-                      >
-                        <div className="theme-card-swatches">
-                          <span className="swatch-main" style={{ backgroundColor: theme.accent }} />
-                          <span className="swatch-sub" style={{ backgroundColor: theme.keycapShadow }} />
-                        </div>
-                        <div className="theme-card-info">
-                          <div className="theme-card-name">{theme.name}</div>
-                          <div className="theme-card-sub">{theme.subtitle}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+            {toggle(
+              'showWhitespace',
+              'Show whitespace',
+              'Subtle dots and return marks make code spacing easier to follow.',
             )}
-
-            {/* TAB 3: VISUALS & CARET */}
-            {activeTab === 'visuals' && (
-              <div className="settings-tab-pane animate-fade-in">
-                <div className="pref-section">
-                  <div className="pref-section-title">
-                    <span>Caret Style</span>
-                  </div>
-
-                  <div className="pref-segmented-control" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: '1.25rem' }}>
-                    {[
-                      { id: 'line', label: 'Line' },
-                      { id: 'block', label: 'Block' },
-                      { id: 'underline', label: 'Underline' }
-                    ].map((c) => (
-                      <button
-                        key={c.id}
-                        type="button"
-                        className={`seg-btn ${caretStyle === c.id ? 'is-active' : ''}`}
-                        onClick={() => onCaretStyleChange(c.id)}
-                      >
-                        {c.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="pref-section-title">
-                    <span>Keyboard & Behavior</span>
-                  </div>
-
-                  <div className="pref-toggle-list">
-                    <div className="pref-toggle-item" onClick={onToggleAutoIndent}>
-                      <div>
-                        <div className="toggle-label">Smart Auto-Indent</div>
-                        <div className="toggle-desc">Enter key automatically skips leading indentation spaces</div>
-                      </div>
-                      <div className={`switch-pill ${autoIndent ? 'is-on' : ''}`} />
-                    </div>
-
-                    <div className="pref-toggle-item" onClick={onToggleWhitespace}>
-                      <div>
-                        <div className="toggle-label">Show Whitespace Dots</div>
-                        <div className="toggle-desc">Display subtle dots for untyped spaces to make indentation obvious</div>
-                      </div>
-                      <div className={`switch-pill ${showWhitespace ? 'is-on' : ''}`} />
-                    </div>
-
-                    <div className="pref-toggle-item" onClick={onToggleKeyHints}>
-                      <div>
-                        <div className="toggle-label">Keycap Target Hints</div>
-                        <div className="toggle-desc">Highlights expected key on virtual keyboard</div>
-                      </div>
-                      <div className={`switch-pill ${showKeyHints ? 'is-on' : ''}`} />
-                    </div>
-
-                    <div className="pref-toggle-item" onClick={onToggleKeyboard}>
-                      <div>
-                        <div className="toggle-label">Virtual Keyboard</div>
-                        <div className="toggle-desc">Display mechanical keyboard layout below typing area</div>
-                      </div>
-                      <div className={`switch-pill ${showKeyboard ? 'is-on' : ''}`} />
-                    </div>
-
-                    <div className="pref-toggle-item" onClick={onToggleMasterMode}>
-                      <div>
-                        <div className="toggle-label">Master Mode</div>
-                        <div className="toggle-desc">Instantly restarts test on a single syntax error</div>
-                      </div>
-                      <div className={`switch-pill ${masterMode ? 'is-on' : ''}`} />
-                    </div>
-                  </div>
-                </div>
-              </div>
+            {toggle(
+              'masterMode',
+              'Master mode',
+              'Restart the exercise immediately after a mistake.',
             )}
-
-            {/* TAB 4: SHORTCUTS */}
-            {activeTab === 'shortcuts' && (
-              <div className="settings-tab-pane animate-fade-in">
-                <div className="pref-section">
-                  <div className="pref-section-title">
-                    <span>Keyboard Shortcuts</span>
-                  </div>
-
-                  <div className="shortcuts-grid">
-                    <div className="shortcut-row">
-                      <span className="shortcut-keys"><kbd>Esc</kbd></span>
-                      <span className="shortcut-desc">Instant Test Restart</span>
-                    </div>
-                    <div className="shortcut-row">
-                      <span className="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>Enter</kbd></span>
-                      <span className="shortcut-desc">Next Code Snippet</span>
-                    </div>
-                    <div className="shortcut-row">
-                      <span className="shortcut-keys"><kbd>Enter</kbd></span>
-                      <span className="shortcut-desc">New line (with Auto-Indent jumps to code token)</span>
-                    </div>
-                    <div className="shortcut-row">
-                      <span className="shortcut-keys"><kbd>Tab</kbd></span>
-                      <span className="shortcut-desc">Smart Indent (advances 2 spaces)</span>
-                    </div>
-                    <div className="shortcut-row">
-                      <span className="shortcut-keys"><kbd>Backspace</kbd></span>
-                      <span className="shortcut-desc">Removes char (or whole indentation after Enter)</span>
-                    </div>
-                    <div className="shortcut-row">
-                      <span className="shortcut-keys"><kbd>Click outside</kbd></span>
-                      <span className="shortcut-desc">Pause & preserve progress</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            {toggle(
+              'showKeyboard',
+              'On-screen keyboard',
+              'Show a keyboard below the exercise. You can also click or tap its keys.',
+            )}
+            {toggle(
+              'showKeyHints',
+              'Target key hints',
+              'Highlight the next key on the on-screen keyboard.',
             )}
           </div>
-        </div>
-
-        {/* Modal Footer */}
-        <div className="modal-footer">
-          <button type="button" className="btn-primary modal-done-btn" onClick={onClose}>
-            Done
-          </button>
-        </div>
+        )}
+        {tab === 'appearance' && (
+          <div>
+            <p className="section-intro">A comfortable canvas, in your own colors.</p>
+            <fieldset className="setting-fieldset">
+              <legend>Appearance</legend>
+              <div className="segmented">
+                {['dark', 'light'].map((mode) => (
+                  <button
+                    type="button"
+                    key={mode}
+                    className={preferences.colorMode === mode ? 'is-active' : ''}
+                    aria-pressed={preferences.colorMode === mode}
+                    onClick={() => onChange({ colorMode: mode })}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+            <fieldset className="setting-fieldset">
+              <legend>Accent</legend>
+              <div className="accent-options">
+                {Object.entries(accentNames).map(([id, name]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={preferences.themeId === id ? 'is-active' : ''}
+                    aria-pressed={preferences.themeId === id}
+                    onClick={() => onChange({ themeId: id })}
+                  >
+                    <span className={`accent-dot accent-${id}`} />
+                    {name}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+            <fieldset className="setting-fieldset">
+              <legend>Caret</legend>
+              <div className="segmented">
+                {['line', 'block', 'underline'].map((style) => (
+                  <button
+                    type="button"
+                    key={style}
+                    className={preferences.caretStyle === style ? 'is-active' : ''}
+                    aria-pressed={preferences.caretStyle === style}
+                    onClick={() => onChange({ caretStyle: style })}
+                  >
+                    {style}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+            <p className="setting-note">
+              Movement follows your device’s reduced-motion preference.
+            </p>
+          </div>
+        )}
+        {tab === 'sound' && (
+          <div>
+            <p className="section-intro">Real key recordings. A little feedback for your rhythm.</p>
+            {toggle(
+              'soundEnabled',
+              'Keyboard sounds',
+              'Mute applies to typing, previews, and completion cues.',
+            )}
+            <fieldset className="setting-fieldset">
+              <legend>Sound profile</legend>
+              <div className="sound-options">
+                {[
+                  { id: 'soft', name: 'Soft', description: 'Warm, rounded, and gently filtered.' },
+                  {
+                    id: 'mechanical',
+                    name: 'Mechanical',
+                    description: 'The clear, natural sound of the recordings.',
+                  },
+                ].map((profile) => (
+                  <button
+                    type="button"
+                    key={profile.id}
+                    className={preferences.soundProfile === profile.id ? 'is-active' : ''}
+                    aria-pressed={preferences.soundProfile === profile.id}
+                    onClick={() => onChange({ soundProfile: profile.id })}
+                  >
+                    <Volume2 size={16} />
+                    <span>
+                      <strong>{profile.name}</strong>
+                      <span>{profile.description}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+            <label className="volume-control">
+              <span>
+                Volume <output>{Math.round(preferences.soundVolume * 100)}%</output>
+              </span>
+              <input
+                aria-label="Sound volume"
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={preferences.soundVolume}
+                onChange={(event) => onChange({ soundVolume: Number(event.target.value) })}
+              />
+            </label>
+            <button
+              className="text-button preview-button"
+              type="button"
+              disabled={
+                !preferences.soundEnabled ||
+                preferences.soundVolume === 0 ||
+                audioStatus === 'unavailable'
+              }
+              onClick={() => keyboardAudio.preview()}
+            >
+              <Play size={14} />
+              Preview sound
+            </button>
+            {audioStatus === 'unavailable' && (
+              <p className="setting-note" role="status">
+                Sound is unavailable in this browser. Typing still works.
+              </p>
+            )}
+            {toggle(
+              'completionSound',
+              'Completion cue',
+              'Play a short, quiet cue when a test finishes.',
+            )}
+            <p className="setting-note">
+              Both profiles use the same CC0 recordings by unicae_games. Soft applies a gentle
+              filter.
+            </p>
+          </div>
+        )}
+        {tab === 'shortcuts' && (
+          <div>
+            <p className="section-intro">Keep your hands on the keyboard.</p>
+            <dl className="shortcuts-list">
+              <div>
+                <dt>
+                  <kbd>esc</kbd>
+                </dt>
+                <dd>Restart the current exercise</dd>
+              </div>
+              <div>
+                <dt>
+                  <kbd>ctrl / ⌘</kbd> <kbd>enter</kbd>
+                </dt>
+                <dd>Load the next exercise</dd>
+              </div>
+              <div>
+                <dt>
+                  <kbd>backspace</kbd>
+                </dt>
+                <dd>Correct a character or return to a previous word</dd>
+              </div>
+              <div>
+                <dt>
+                  <kbd>ctrl / alt</kbd> <kbd>backspace</kbd>
+                </dt>
+                <dd>Delete the current word</dd>
+              </div>
+              <div>
+                <dt>
+                  <kbd>enter</kbd>
+                </dt>
+                <dd>New line in code, or next exercise on results</dd>
+              </div>
+              <div>
+                <dt>
+                  <kbd>tab</kbd>
+                </dt>
+                <dd>Indent at the start of a code line; otherwise move between controls</dd>
+              </div>
+            </dl>
+            <p className="setting-note">
+              Moving focus outside the exercise pauses the timer. Resume by clicking the canvas or
+              typing into its input.
+            </p>
+          </div>
+        )}
       </div>
-    </div>
+      <div className="dialog-footer">
+        <button className="button-primary" type="button" onClick={onClose}>
+          Done
+        </button>
+      </div>
+    </Dialog>
   );
 }
